@@ -1,4 +1,4 @@
-package main
+package menu
 
 import (
 	"bytes"
@@ -8,10 +8,11 @@ import (
 	_ "image/png"
 	"log"
 	"math"
-	"os"
-	"path/filepath"
+	"path"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	gameassets "go-cuddlymenu/assets"
 )
 
 type Assets struct {
@@ -22,31 +23,32 @@ type Assets struct {
 	MenuYM    []byte
 }
 
-func LoadAssets(root string, maxTileIndex int) *Assets {
+func LoadAssets(maxTileIndex int) *Assets {
 	assets := &Assets{}
+	const root = "menu"
 
-	tilesPath := filepath.Join(root, "tiles.png")
+	tilesPath := path.Join(root, "tiles.png")
 	assets.Tiles = loadImage(tilesPath, func() *ebiten.Image {
 		return makePlaceholderTiles(tileSize, tileSize, maxTileIndex+1)
 	})
 
-	dudePath := filepath.Join(root, "dude.png")
+	dudePath := path.Join(root, "dude.png")
 	assets.Dude = loadImage(dudePath, func() *ebiten.Image {
 		return makePlaceholderSheet(640, 128, color.RGBA{220, 80, 80, 255})
 	})
 
-	carebearsPath := filepath.Join(root, "carebears.png")
+	carebearsPath := path.Join(root, "carebears.png")
 	assets.Carebears = loadImage(carebearsPath, func() *ebiten.Image {
 		return makePlaceholderCarebears()
 	})
 
-	chromePath := filepath.Join(root, "chrome.png")
+	chromePath := path.Join(root, "chrome.png")
 	assets.Chrome = loadImage(chromePath, func() *ebiten.Image {
 		return makePlaceholderScrollFont()
 	})
 
-	ymPath := filepath.Join(root, "menu.ym")
-	data, err := os.ReadFile(ymPath)
+	ymPath := path.Join(root, "menu.ym")
+	data, err := gameassets.Files.ReadFile(ymPath)
 	if err != nil {
 		log.Printf("menu.ym missing (%v): YM playback disabled", err)
 	} else {
@@ -57,7 +59,7 @@ func LoadAssets(root string, maxTileIndex int) *Assets {
 }
 
 func loadImage(path string, fallback func() *ebiten.Image) *ebiten.Image {
-	data, err := os.ReadFile(path)
+	data, err := gameassets.Files.ReadFile(path)
 	if err != nil {
 		log.Printf("missing asset %s (%v), using placeholder", path, err)
 		return fallback()
