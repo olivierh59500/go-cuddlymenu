@@ -1,0 +1,53 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.olivierh.cuddlymenu"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="23"
+9        android:targetSdkVersion="36" />
+10
+11    <uses-feature
+11-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:3:5-5:35
+12        android:glEsVersion="0x00020000"
+12-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:4:9-41
+13        android:required="true" />
+13-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:5:9-32
+14
+15    <application
+15-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:7:5-22:19
+16        android:allowBackup="false"
+16-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:8:9-36
+17        android:debuggable="true"
+18        android:extractNativeLibs="false"
+19        android:label="Cuddly Demos"
+19-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:9:9-37
+20        android:supportsRtl="true"
+20-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:10:9-35
+21        android:theme="@style/AppTheme" >
+21-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:11:9-40
+22        <activity
+22-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:12:9-21:20
+23            android:name="com.olivierh.cuddlymenu.MainActivity"
+23-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:13:13-41
+24            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+24-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:14:13-122
+25            android:exported="true"
+25-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:15:13-36
+26            android:screenOrientation="sensorLandscape" >
+26-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:16:13-56
+27            <intent-filter>
+27-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:17:13-20:29
+28                <action android:name="android.intent.action.MAIN" />
+28-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:18:17-69
+28-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:18:25-66
+29
+30                <category android:name="android.intent.category.LAUNCHER" />
+30-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:19:17-77
+30-->/Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/AndroidManifest.xml:19:27-74
+31            </intent-filter>
+32        </activity>
+33    </application>
+34
+35</manifest>

@@ -1,0 +1,7 @@
+com.olivierh.cuddlymenu.app-pngs-0 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/build/generated/res/pngs/debug
+com.olivierh.cuddlymenu.app-resValues-1 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/build/generated/res/resValues/debug
+com.olivierh.cuddlymenu.app-packageDebugResources-2 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.olivierh.cuddlymenu.app-packageDebugResources-3 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.olivierh.cuddlymenu.app-debug-4 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.olivierh.cuddlymenu.app-debug-5 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/debug/res
+com.olivierh.cuddlymenu.app-main-6 /Users/olivier/GolandProjects/go-cuddlymenu/android/app/src/main/res
