@@ -1,4 +1,4 @@
-package main
+package menu
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"log"
 	"math"
 	"math/rand"
-	"path/filepath"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -69,6 +68,7 @@ type Game struct {
 	audioContext *audio.Context
 	audioPlayer  *audio.Player
 	ymPlayer     *YMPlayer
+	audioReady   bool
 
 	mapTiles      *TileSet
 	dudeTiles     *TileSet
@@ -82,6 +82,7 @@ type Game struct {
 	background   *ebiten.Image
 	gameCanvas   *ebiten.Image
 	screenCanvas *ebiten.Image
+	crtCanvas    *ebiten.Image
 
 	sineSprites *SineSprites
 	animations  DudeAnimations
@@ -95,19 +96,27 @@ type Game struct {
 
 	crtShader *ebiten.Shader
 	useCRT    bool
+
+	layoutWidth int
+	touchIDs    []ebiten.TouchID
+	controls    controlState
+	touchSeen   bool
 }
 
 var bouncingAnimation = []int{0, 3, 5, 6, 5, 3, 0, 1, 2, 3, 2, 1, 0}
 
 func NewGame() *Game {
+	rand.Seed(time.Now().UnixNano())
 	maxTile := maxTileIndex(cuddlyMap)
-	assets := LoadAssets(filepath.Join("assets", "menu"), maxTile)
+	assets := LoadAssets(maxTile)
 
 	g := &Game{
 		assets:       assets,
 		useCRT:       false,
 		gameCanvas:   ebiten.NewImage(gameWidth, gameHeight),
 		screenCanvas: ebiten.NewImage(screenWidth, screenHeight),
+		crtCanvas:    ebiten.NewImage(screenWidth, screenHeight),
+		layoutWidth:  screenWidth,
 	}
 
 	g.mapTiles = NewTileSet(assets.Tiles, tileSize, tileSize)
@@ -131,7 +140,6 @@ func NewGame() *Game {
 	}
 
 	g.Reset()
-	g.initAudio()
 	g.initShader()
 
 	return g
@@ -185,6 +193,14 @@ func (g *Game) initShader() {
 }
 
 func (g *Game) Update() error {
+	if !g.audioReady {
+		// On Android, the native library is loaded before MainActivity can give
+		// gomobile its Context. Opening the audio device here guarantees that
+		// the Activity and Ebitengine view are fully initialized first.
+		g.audioReady = true
+		g.initAudio()
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 		g.Reset()
 	}
@@ -225,25 +241,36 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawScene(g.screenCanvas)
+	source := g.screenCanvas
 	if g.useCRT && g.crtShader != nil {
+		g.crtCanvas.Clear()
 		op := &ebiten.DrawRectShaderOptions{}
 		op.Images[0] = g.screenCanvas
-		screen.DrawRectShader(screenWidth, screenHeight, g.crtShader, op)
-		return
+		g.crtCanvas.DrawRectShader(screenWidth, screenHeight, g.crtShader, op)
+		source = g.crtCanvas
 	}
-	screen.DrawImage(g.screenCanvas, nil)
+
+	screen.Fill(color.Black)
+	var op ebiten.DrawImageOptions
+	op.GeoM.Translate(float64((screen.Bounds().Dx()-screenWidth)/2), 0)
+	screen.DrawImage(source, &op)
+	if g.virtualControlsVisible() {
+		g.drawVirtualControls(screen)
+	}
 }
 
-func (g *Game) Layout(_, _ int) (int, int) {
-	return screenWidth, screenHeight
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	g.layoutWidth = logicalWidth(outsideWidth, outsideHeight)
+	return g.layoutWidth, screenHeight
 }
 
-func (g *Game) readInput() (left, right, thrust, load, anyKey bool) {
-	left = ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyZ)
-	right = ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyX)
-	thrust = ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyEnter)
+func (g *Game) readInput() (left, right, thrust, load, anyInput bool) {
+	controls, pointerActive := g.readVirtualControls()
+	left = ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyZ) || controls.Left
+	right = ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyX) || controls.Right
+	thrust = ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyEnter) || controls.Fly
 	load = ebiten.IsKeyPressed(ebiten.KeySpace)
-	anyKey = len(inpututil.AppendPressedKeys(nil)) > 0
+	anyInput = len(inpututil.AppendPressedKeys(nil)) > 0 || pointerActive
 	return
 }
 
@@ -725,13 +752,3 @@ func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
 	return col * color
 }
 `
-
-func main() {
-	rand.Seed(time.Now().UnixNano())
-	game := NewGame()
-	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowTitle("Cuddly Demos - Menu")
-	if err := ebiten.RunGame(game); err != nil {
-		log.Fatal(err)
-	}
-}
