@@ -1,6 +1,9 @@
 package menu
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+)
 
 func TestLogicalWidth(t *testing.T) {
 	tests := []struct {
@@ -46,5 +49,14 @@ func TestControlStateSupportsMultitouch(t *testing.T) {
 
 	if state.Left || !state.Right || !state.Fly {
 		t.Fatalf("unexpected control state: %#v", state)
+	}
+}
+
+func TestVirtualControlsAreDisabledOnDesktop(t *testing.T) {
+	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
+		t.Skip("mobile platform")
+	}
+	if virtualControlsEnabled() {
+		t.Fatal("virtual controls must stay disabled on desktop")
 	}
 }

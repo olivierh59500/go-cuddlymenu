@@ -39,6 +39,45 @@ type controlLayout struct {
 	Fly   controlButton
 }
 
+type controlSprites struct {
+	left  [2]*ebiten.Image
+	right [2]*ebiten.Image
+	fly   [2]*ebiten.Image
+}
+
+func newControlSprites() controlSprites {
+	return controlSprites{
+		left: [2]*ebiten.Image{
+			newControlSprite(padButtonRadius, false, -1, false),
+			newControlSprite(padButtonRadius, true, -1, false),
+		},
+		right: [2]*ebiten.Image{
+			newControlSprite(padButtonRadius, false, 1, false),
+			newControlSprite(padButtonRadius, true, 1, false),
+		},
+		fly: [2]*ebiten.Image{
+			newControlSprite(flyButtonRadius, false, 0, true),
+			newControlSprite(flyButtonRadius, true, 0, true),
+		},
+	}
+}
+
+func newControlSprite(radius float64, pressed bool, direction float32, fly bool) *ebiten.Image {
+	size := int(radius*2) + 8
+	center := float64(size) / 2
+	img := ebiten.NewImage(size, size)
+	drawRoundButton(img, controlButton{X: center, Y: center, Radius: radius}, pressed)
+
+	icon := color.RGBA{R: 255, G: 255, B: 255, A: 235}
+	if fly {
+		drawUpArrow(img, center, center-6, icon)
+		ebitenutil.DebugPrintAt(img, "VOLER", int(center)-15, int(center)+23)
+	} else {
+		drawChevron(img, center, center, direction, icon)
+	}
+	return img
+}
+
 func logicalWidth(outsideWidth, outsideHeight int) int {
 	if outsideWidth <= 0 || outsideHeight <= 0 {
 		return screenWidth
@@ -70,6 +109,11 @@ func makeControlLayout(width, height int) controlLayout {
 }
 
 func (g *Game) readVirtualControls() (controlState, bool) {
+	if !virtualControlsEnabled() {
+		g.controls = controlState{}
+		return g.controls, false
+	}
+
 	layout := makeControlLayout(g.layoutWidth, screenHeight)
 	state := controlState{}
 
@@ -78,10 +122,6 @@ func (g *Game) readVirtualControls() (controlState, bool) {
 		x, y := ebiten.TouchPosition(id)
 		state.press(layout, x, y)
 	}
-	if len(g.touchIDs) > 0 {
-		g.touchSeen = true
-	}
-
 	mouseActive := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	if mouseActive {
 		x, y := ebiten.CursorPosition()
@@ -105,20 +145,34 @@ func (s *controlState) press(layout controlLayout, x, y int) {
 }
 
 func (g *Game) virtualControlsVisible() bool {
-	return runtime.GOOS == "android" || runtime.GOOS == "ios" || g.touchSeen || g.layoutWidth > screenWidth
+	return virtualControlsEnabled()
+}
+
+func virtualControlsEnabled() bool {
+	return runtime.GOOS == "android" || runtime.GOOS == "ios"
 }
 
 func (g *Game) drawVirtualControls(dst *ebiten.Image) {
 	layout := makeControlLayout(dst.Bounds().Dx(), dst.Bounds().Dy())
-	drawRoundButton(dst, layout.Left, g.controls.Left)
-	drawRoundButton(dst, layout.Right, g.controls.Right)
-	drawRoundButton(dst, layout.Fly, g.controls.Fly)
+	drawControlSprite(dst, g.controlUI.left[boolIndex(g.controls.Left)], layout.Left)
+	drawControlSprite(dst, g.controlUI.right[boolIndex(g.controls.Right)], layout.Right)
+	drawControlSprite(dst, g.controlUI.fly[boolIndex(g.controls.Fly)], layout.Fly)
+}
 
-	icon := color.RGBA{R: 255, G: 255, B: 255, A: 235}
-	drawChevron(dst, layout.Left.X, layout.Left.Y, -1, icon)
-	drawChevron(dst, layout.Right.X, layout.Right.Y, 1, icon)
-	drawUpArrow(dst, layout.Fly.X, layout.Fly.Y-6, icon)
-	ebitenutil.DebugPrintAt(dst, "VOLER", int(layout.Fly.X)-15, int(layout.Fly.Y)+23)
+func boolIndex(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+func drawControlSprite(dst, sprite *ebiten.Image, button controlButton) {
+	var op ebiten.DrawImageOptions
+	op.GeoM.Translate(
+		button.X-float64(sprite.Bounds().Dx())/2,
+		button.Y-float64(sprite.Bounds().Dy())/2,
+	)
+	dst.DrawImage(sprite, &op)
 }
 
 func drawRoundButton(dst *ebiten.Image, button controlButton, pressed bool) {
@@ -128,7 +182,7 @@ func drawRoundButton(dst *ebiten.Image, button controlButton, pressed bool) {
 		fill = color.RGBA{R: 14, G: 116, B: 144, A: 225}
 		border = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 	}
-	vector.DrawFilledCircle(dst, float32(button.X), float32(button.Y), float32(button.Radius), fill, true)
+	vector.FillCircle(dst, float32(button.X), float32(button.Y), float32(button.Radius), fill, true)
 	vector.StrokeCircle(dst, float32(button.X), float32(button.Y), float32(button.Radius), 3, border, true)
 }
 
