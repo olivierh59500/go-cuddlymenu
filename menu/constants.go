@@ -25,5 +25,6 @@ const (
 	scrollSpeed               = 8
 	autoPilotActivateDuration = 60 * 60 * 2
 
-	sampleRate = 44100
+	sampleRate  = 48000
+	musicVolume = 0.7
 )

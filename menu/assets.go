@@ -43,9 +43,9 @@ func LoadAssets(maxTileIndex int) *Assets {
 	})
 
 	chromePath := path.Join(root, "chrome.png")
-	assets.Chrome = loadImage(chromePath, func() *ebiten.Image {
+	assets.Chrome = loadImageWithOptions(chromePath, func() *ebiten.Image {
 		return makePlaceholderScrollFont()
-	})
+	}, &ebiten.NewImageFromImageOptions{Unmanaged: true})
 
 	ymPath := path.Join(root, "menu.ym")
 	data, err := gameassets.Files.ReadFile(ymPath)
@@ -59,6 +59,10 @@ func LoadAssets(maxTileIndex int) *Assets {
 }
 
 func loadImage(path string, fallback func() *ebiten.Image) *ebiten.Image {
+	return loadImageWithOptions(path, fallback, nil)
+}
+
+func loadImageWithOptions(path string, fallback func() *ebiten.Image, options *ebiten.NewImageFromImageOptions) *ebiten.Image {
 	data, err := gameassets.Files.ReadFile(path)
 	if err != nil {
 		log.Printf("missing asset %s (%v), using placeholder", path, err)
@@ -69,7 +73,7 @@ func loadImage(path string, fallback func() *ebiten.Image) *ebiten.Image {
 		log.Printf("failed to decode %s (%v), using placeholder", path, err)
 		return fallback()
 	}
-	return ebiten.NewImageFromImage(img)
+	return ebiten.NewImageFromImageWithOptions(img, options)
 }
 
 func makePlaceholderTiles(tileW, tileH, total int) *ebiten.Image {

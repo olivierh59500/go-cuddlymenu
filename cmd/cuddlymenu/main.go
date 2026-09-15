@@ -12,7 +12,8 @@ func main() {
 	ebiten.SetWindowSize(768, 536)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Cuddly Demos - Menu")
-	if err := ebiten.RunGame(menu.NewGame()); err != nil {
+	ebiten.SetScreenClearedEveryFrame(false)
+	if err := ebiten.RunGame(newDrawOnUpdateGame(menu.NewGame())); err != nil {
 		log.Fatal(err)
 	}
 }

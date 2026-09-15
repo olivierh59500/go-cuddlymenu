@@ -1,18 +1,17 @@
 package menu
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"log"
 	"math"
 	"math/rand"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type Vec2 struct {
@@ -51,9 +50,9 @@ type DemoScreen struct {
 }
 
 type LoaderState struct {
-	Active     bool
-	ScreenName string
-	Timer      int
+	Active bool
+	Label  string
+	Timer  int
 }
 
 type DudeAnimations struct {
@@ -99,24 +98,22 @@ type Game struct {
 
 	layoutWidth int
 	touchIDs    []ebiten.TouchID
+	pressedKeys []ebiten.Key
 	controls    controlState
-	touchSeen   bool
+	controlUI   controlSprites
 }
 
 var bouncingAnimation = []int{0, 3, 5, 6, 5, 3, 0, 1, 2, 3, 2, 1, 0}
 
 func NewGame() *Game {
-	rand.Seed(time.Now().UnixNano())
 	maxTile := maxTileIndex(cuddlyMap)
 	assets := LoadAssets(maxTile)
 
 	g := &Game{
-		assets:       assets,
-		useCRT:       false,
-		gameCanvas:   ebiten.NewImage(gameWidth, gameHeight),
-		screenCanvas: ebiten.NewImage(screenWidth, screenHeight),
-		crtCanvas:    ebiten.NewImage(screenWidth, screenHeight),
-		layoutWidth:  screenWidth,
+		assets:      assets,
+		useCRT:      false,
+		gameCanvas:  newUnmanagedImage(gameWidth, gameHeight),
+		layoutWidth: screenWidth,
 	}
 
 	g.mapTiles = NewTileSet(assets.Tiles, tileSize, tileSize)
@@ -140,7 +137,9 @@ func NewGame() *Game {
 	}
 
 	g.Reset()
-	g.initShader()
+	if virtualControlsEnabled() {
+		g.controlUI = newControlSprites()
+	}
 
 	return g
 }
@@ -176,20 +175,35 @@ func (g *Game) initAudio() {
 	g.audioPlayer, err = g.audioContext.NewPlayer(g.ymPlayer)
 	if err != nil {
 		log.Printf("failed to create audio player: %v", err)
-		g.ymPlayer.Close()
+		if closeErr := g.ymPlayer.Close(); closeErr != nil {
+			log.Printf("failed to close YM player: %v", closeErr)
+		}
 		g.ymPlayer = nil
 		return
 	}
+	g.audioPlayer.SetVolume(musicVolume)
 	g.audioPlayer.Play()
 }
 
-func (g *Game) initShader() {
+func newUnmanagedImage(width, height int) *ebiten.Image {
+	return ebiten.NewImageWithOptions(
+		image.Rect(0, 0, width, height),
+		&ebiten.NewImageOptions{Unmanaged: true},
+	)
+}
+
+func (g *Game) initCRT() {
+	if g.crtShader != nil {
+		return
+	}
 	shader, err := ebiten.NewShader([]byte(crtShaderSrc))
 	if err != nil {
 		log.Printf("failed to compile CRT shader: %v", err)
 		return
 	}
 	g.crtShader = shader
+	g.screenCanvas = newUnmanagedImage(screenWidth, screenHeight)
+	g.crtCanvas = newUnmanagedImage(screenWidth, screenHeight)
 }
 
 func (g *Game) Update() error {
@@ -206,6 +220,12 @@ func (g *Game) Update() error {
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		g.useCRT = !g.useCRT
+		if g.useCRT {
+			g.initCRT()
+			if g.crtShader == nil {
+				g.useCRT = false
+			}
+		}
 	}
 
 	if g.loading.Active {
@@ -240,20 +260,22 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.drawScene(g.screenCanvas)
-	source := g.screenCanvas
-	if g.useCRT && g.crtShader != nil {
-		g.crtCanvas.Clear()
+	screen.Fill(color.Black)
+	sceneX := (screen.Bounds().Dx() - screenWidth) / 2
+	if g.useCRT {
+		g.screenCanvas.Fill(color.Black)
+		g.drawScene(g.screenCanvas, 0)
 		op := &ebiten.DrawRectShaderOptions{}
 		op.Images[0] = g.screenCanvas
+		op.Blend = ebiten.BlendCopy
 		g.crtCanvas.DrawRectShader(screenWidth, screenHeight, g.crtShader, op)
-		source = g.crtCanvas
-	}
 
-	screen.Fill(color.Black)
-	var op ebiten.DrawImageOptions
-	op.GeoM.Translate(float64((screen.Bounds().Dx()-screenWidth)/2), 0)
-	screen.DrawImage(source, &op)
+		var drawOp ebiten.DrawImageOptions
+		drawOp.GeoM.Translate(float64(sceneX), 0)
+		screen.DrawImage(g.crtCanvas, &drawOp)
+	} else {
+		g.drawScene(screen, sceneX)
+	}
 	if g.virtualControlsVisible() {
 		g.drawVirtualControls(screen)
 	}
@@ -270,7 +292,8 @@ func (g *Game) readInput() (left, right, thrust, load, anyInput bool) {
 	right = ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyX) || controls.Right
 	thrust = ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyEnter) || controls.Fly
 	load = ebiten.IsKeyPressed(ebiten.KeySpace)
-	anyInput = len(inpututil.AppendPressedKeys(nil)) > 0 || pointerActive
+	g.pressedKeys = inpututil.AppendPressedKeys(g.pressedKeys[:0])
+	anyInput = len(g.pressedKeys) > 0 || pointerActive
 	return
 }
 
@@ -483,9 +506,9 @@ func (g *Game) handleLoad(load bool) {
 
 func (g *Game) startLoading(name string) {
 	g.loading = LoaderState{
-		Active:     true,
-		ScreenName: name,
-		Timer:      120,
+		Active: true,
+		Label:  "LOADING " + name,
+		Timer:  120,
 	}
 	g.autoPilot.NowLoadScreen = false
 	g.autoPilot.WaitToLoad = 80
@@ -516,15 +539,12 @@ func (g *Game) updateLoading() {
 	}
 }
 
-func (g *Game) drawScene(dst *ebiten.Image) {
-	dst.Fill(color.Black)
-
+func (g *Game) drawScene(dst *ebiten.Image, sceneX int) {
 	if g.scrollerLength > 0 {
 		scrollX := g.model.ScrollerPosition % g.scrollerLength
-		g.scrollerLevel.Draw(dst, scrollX, 0, scrollOffsetX, scrollOffsetY, scrollWidth, scrollHeight)
+		g.scrollerLevel.Draw(dst, scrollX, 0, sceneX+scrollOffsetX, scrollOffsetY, scrollWidth, scrollHeight)
 	}
 
-	g.gameCanvas.Fill(color.Black)
 	mapX, mapY, dudeX, dudeY, bounce := g.calculatePositions()
 	g.drawBackground(g.gameCanvas, mapX, mapY)
 	g.mapLevel.Draw(g.gameCanvas, mapX, mapY, 0, 0, gameWidth, gameHeight)
@@ -533,11 +553,11 @@ func (g *Game) drawScene(dst *ebiten.Image) {
 	g.sineSprites.Draw(g.gameCanvas, g.carebearTime)
 
 	var op ebiten.DrawImageOptions
-	op.GeoM.Translate(gameOffsetX, gameOffsetY)
+	op.GeoM.Translate(float64(sceneX+gameOffsetX), gameOffsetY)
 	dst.DrawImage(g.gameCanvas, &op)
 
 	if g.loading.Active {
-		g.drawLoading(dst)
+		g.drawLoading(dst, sceneX)
 	}
 }
 
@@ -641,24 +661,19 @@ func (g *Game) drawBackground(dst *ebiten.Image, posX, posY int) {
 		posY = 0
 	}
 
-	deltaX := int(math.Mod(float64(posX)*0.5, float64(tileSize)))
-	deltaY := int(math.Mod(float64(posY)*0.5, float64(tileSize)))
-	if deltaX < 0 {
-		deltaX += tileSize
-	}
-	if deltaY < 0 {
-		deltaY += tileSize
-	}
+	deltaX := (posX / 2) % tileSize
+	deltaY := (posY / 2) % tileSize
 
-	rect := image.Rect(deltaX, deltaY, deltaX+gameWidth, deltaY+g.mapLevel.HeightPx)
-	sub := g.background.SubImage(rect).(*ebiten.Image)
-	dst.DrawImage(sub, nil)
+	var op ebiten.DrawImageOptions
+	op.GeoM.Translate(float64(-deltaX), float64(-deltaY))
+	op.Blend = ebiten.BlendCopy
+	dst.DrawImage(g.background, &op)
 }
 
 func (g *Game) buildBackground() *ebiten.Image {
 	bgW := gameWidth + tileSize
-	bgH := g.mapLevel.HeightPx + tileSize
-	img := ebiten.NewImage(bgW, bgH)
+	bgH := gameHeight + tileSize
+	img := newUnmanagedImage(bgW, bgH)
 	tile := g.mapTiles.Tile(1)
 	for y := 0; y < bgH; y += tileSize {
 		for x := 0; x < bgW; x += tileSize {
@@ -670,10 +685,10 @@ func (g *Game) buildBackground() *ebiten.Image {
 	return img
 }
 
-func (g *Game) drawLoading(dst *ebiten.Image) {
+func (g *Game) drawLoading(dst *ebiten.Image, sceneX int) {
 	overlay := color.RGBA{0, 0, 0, 200}
-	ebitenutil.DrawRect(dst, 0, 0, screenWidth, screenHeight, overlay)
-	ebitenutil.DebugPrintAt(dst, fmt.Sprintf("LOADING %s", g.loading.ScreenName), 20, 20)
+	vector.FillRect(dst, float32(sceneX), 0, screenWidth, screenHeight, overlay, false)
+	ebitenutil.DebugPrintAt(dst, g.loading.Label, sceneX+20, 20)
 }
 
 func maxTileIndex(mapData [][]int) int {

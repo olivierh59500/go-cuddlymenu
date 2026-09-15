@@ -282,7 +282,7 @@ Les dépendances directes de ce dépôt sont :
 | Module | Version | Utilité |
 |---|---:|---|
 | `github.com/hajimehoshi/ebiten/v2` | 2.9.11 | moteur du jeu et support mobile |
-| `github.com/olivierh59500/ym-player` | pseudo-version du 7 juin 2025 | lecture de la musique YM |
+| `github.com/olivierh59500/ym-player` | pseudo-version du 13 septembre 2026 | synthèse YM optimisée utilisée à 48 kHz |
 
 Les dépendances indirectes importantes sont :
 
@@ -546,7 +546,7 @@ go 1.25.0
 
 require (
     github.com/hajimehoshi/ebiten/v2 v2.9.11
-    github.com/olivierh59500/ym-player v0.0.0-20250607015657-bb5818debd02
+    github.com/olivierh59500/ym-player v0.0.0-20260913215440-3f73bdca82e5
 )
 ```
 
@@ -706,9 +706,11 @@ github.com/hajimehoshi/ebiten/v2/vector
 
 Le bouton pressé change de couleur. Ce retour visuel aide énormément au diagnostic des touches et évite à l’utilisateur de se demander si son doigt est reconnu.
 
-### 9.5 Prévisualisation à la souris
+Ces primitives ne sont pas recalculées à chaque frame. Au démarrage mobile, le jeu prépare six petites images — gauche, droite et voler, chacune normale et pressée — puis le rendu courant se limite à trois `DrawImage`. Ce cache supprime la tessellation vectorielle du chemin chaud et conserve exactement le même retour visuel.
 
-Le même système accepte le clic gauche :
+### 9.5 Limiter les commandes virtuelles au mobile
+
+Le même système peut accepter le clic gauche sur Android/iOS, par exemple avec une souris connectée :
 
 ```go
 if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
@@ -717,7 +719,15 @@ if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 }
 ```
 
-Cela permet de tester les hitboxes sur ordinateur sans reconstruire un APK. Sur bureau, les commandes sont affichées après le premier contact ou lorsque la fenêtre est plus large que la scène.
+Dans ce projet, l’entrée et le rendu des commandes virtuelles sont toutefois désactivés sur desktop :
+
+```go
+func virtualControlsEnabled() bool {
+    return runtime.GOOS == "android" || runtime.GOOS == "ios"
+}
+```
+
+Redimensionner la fenêtre ordinateur ne doit donc jamais faire apparaître ni activer le pad. La géométrie des hitboxes est validée par les tests unitaires, puis le comportement multitouch est contrôlé sur le téléphone réel.
 
 ### 9.6 Piège visuel rencontré
 
@@ -806,17 +816,26 @@ La taille est plafonnée à 1280 pour éviter qu’une surface ultra-large crée
 
 ### 10.4 Centrer la scène sans lui appliquer l’effet CRT
 
-Le jeu est d’abord dessiné dans un canvas fixe, puis placé au centre :
+Dans le chemin normal, la scène est dessinée directement dans l’offscreen logique d’Ebitengine avec un décalage horizontal :
 
 ```go
-offsetX := (screen.Bounds().Dx() - screenWidth) / 2
-op.GeoM.Translate(float64(offsetX), 0)
-screen.DrawImage(source, &op)
+sceneX := (screen.Bounds().Dx() - screenWidth) / 2
+g.drawScene(screen, sceneX)
 ```
 
 Les commandes sont dessinées ensuite sur l’écran final. Elles ne reçoivent donc pas le shader CRT destiné à la démo.
 
-### 10.5 Portrait, paysage, encoche et barres système
+Les deux canvases fixes et le shader CRT sont créés paresseusement au premier appui sur `C` sur desktop. Ils ne consomment donc aucune mémoire sur mobile, où cet effet n’est pas exposé.
+
+### 10.5 Réduire les textures intermédiaires
+
+La police de scroller `chrome.png` mesure `5664×80`. Chargée comme image normale, elle forçait un atlas interne `8192×1024`. Elle est désormais créée avec `Unmanaged: true`, ce qui utilise une texture beaucoup moins haute sans modifier l’asset.
+
+Le fond répété ne couvre plus toute la hauteur de la carte : une image `800×432` suffit pour la fenêtre visible `768×400` et sa marge de défilement. Elle est translatée directement au lieu de créer un `SubImage` dynamique à chaque rendu.
+
+Les grands canvases utilisés comme cibles de rendu sont également non atlased afin d’éviter les arrondis très coûteux aux dimensions d’atlas.
+
+### 10.6 Portrait, paysage, encoche et barres système
 
 Le manifeste force une orientation paysage :
 
@@ -1675,9 +1694,12 @@ Le `set -eu` empêche le script de continuer après une erreur ou avec une varia
 - [ ] Supporter au moins deux doigts simultanés.
 - [ ] Partager la géométrie entre dessin et hit-test.
 - [ ] Prévoir un retour visuel pressé/non pressé.
-- [ ] Ajouter un fallback souris pour le bureau.
+- [ ] Mettre en cache les états graphiques statiques des contrôles.
+- [ ] Désactiver complètement le pad virtuel et ses entrées sur desktop.
 - [ ] Calculer un layout logique adapté au ratio du téléphone.
 - [ ] Exploiter les bandes latérales plutôt que déformer la scène.
+- [ ] Vérifier les dimensions réelles des atlas avec `-tags ebitenginedebug`.
+- [ ] Créer les effets optionnels et leurs canvases seulement à la demande.
 - [ ] Tester encoche, barres système et deux rotations paysage.
 
 ### Phase F — Android
