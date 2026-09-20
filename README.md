@@ -32,3 +32,9 @@ Les contrôles clavier existants restent disponibles : flèches gauche/droite, f
 Le document Adapter un projet Go + Ebitengine vers Android / Pixel décrit en détail l’installation des outils, l’architecture du portage, le tactile, le build, l’installation USB et le diagnostic des problèmes rencontrés.
 
 La migration du synthétiseur, la suppression des allocations dans le flux PCM et le passage à 48 kHz sont documentés dans [GUIDE_MIGRATION_YM_PLAYER_48KHZ.md](GUIDE_MIGRATION_YM_PLAYER_48KHZ.md).
+
+## Optional DCK version
+
+The original implementation remains at its original paths. Run it with `go run ./cmd/cuddlymenu`.
+
+The construction-kit version is in [dck/](dck/README.md). Run `go run ./dck/cmd/cuddlymenu` from this directory. Both versions share the original assets.
