@@ -21,22 +21,26 @@ type Descriptor struct {
 	Ready                             bool
 }
 
+// TicksPerSecond is the PAL playback cadence, independent of monitor refresh.
+// Source frame counters retain their original ordering at this fixed rate.
+const TicksPerSecond = 50
+
 var catalog = []Descriptor{
 	{"big-sprite", "The Big Sprite Demo", "big_sprite", "big-sprite", "cuddly_bigsprite.ym", 768, 540, true},
 	{"colorshock", "Colorshock II", "colorshock2", "colorshock", "Colorshock.ym", 768, 540, true},
 	{"ehh", "Ehhh!!!! / No Name 1", "ehh", "ehh", "@ym/ehh.ym", 768, 540, true},
 	{"megascroller", "The Mega Scroller", "megascroller", "megascroller", "@ym/megascroller.ym", 768, 540, true},
-	{"spreadpoint", "Spreadpoint", "spreadpoint", "spreadpoint", "master.mp3", 832, 552, false},
+	{"spreadpoint", "Spreadpoint", "spreadpoint", "spreadpoint", "master.mp3", 832, 552, true},
 	{"digi", "Digi Sound", "digi", "digi", "tcbdigi.mp3", 768, 540, true},
 	{"led", "The LED Scroller", "led_scroller", "led", "@ym/led.ym", 768, 540, true},
-	{"3d-doc", "The 3D DOC", "3d_doc", "3d-doc", "Cuddly - 3D doc.ym", 768, 540, false},
+	{"3d-doc", "The 3D DOC", "3d_doc", "3d-doc", "Cuddly - 3D doc.ym", 768, 540, true},
 	{"fullscreen", "The Fullscreen Demo", "fullscreen", "fullscreen", "@ym/fullscreen.ym", 768, 536, true},
-	{"starwars", "The Starwars Demo", "starwars", "starwars", "Cuddly - Star-Wars.ym", 768, 540, false},
+	{"starwars", "The Starwars Demo", "starwars", "starwars", "Cuddly - Star-Wars.ym", 768, 540, true},
 	{"knucklebuster", "Knucklebuster", "tex", "knucklebuster", "@ym/knucklebusters.ym", 768, 540, true},
-	{"dna", "The DNA Demo", "dna_demo", "dna", "bankok-knights-1.ym", 832, 552, false},
-	{"megaball", "The Megaball Demo / No Name 2", "megaball", "megaball", "Cuddly - Megaballs.ym", 768, 540, false},
-	{"intro", "Introduction", "intro", "intro", "cuddlyintro.mp3", 768, 540, false},
-	{"reset", "Reset Screen", "reset", "reset", "cuddlyreset.ym", 768, 540, false},
+	{"dna", "The DNA Demo", "dna_demo", "dna", "bankok-knights-1.ym", 832, 552, true},
+	{"megaball", "The Megaball Demo / No Name 2", "megaball", "megaball", "Cuddly - Megaballs.ym", 768, 540, true},
+	{"intro", "Introduction", "intro", "intro", "cuddlyintro.mp3", 768, 540, true},
+	{"reset", "Reset Screen", "reset", "reset", "cuddlyreset.ym", 768, 540, true},
 }
 
 func Catalog() []Descriptor { return append([]Descriptor(nil), catalog...) }
@@ -52,21 +56,32 @@ func DoorID(name string) string {
 	return map[string]string{"BIG_SPRITE": "big-sprite", "COLORSHOCK_II": "colorshock", "NO_NAME_1": "ehh", "MEGA_SCROLLER": "megascroller", "SPREADPOINT": "spreadpoint", "DIGI_DEMO": "digi", "LED_SCROLLER": "led", "DOC": "3d-doc", "FULLSCREEN": "fullscreen", "STARWARS_DEMO": "starwars", "KNUCKLE_BUSTER": "knucklebuster", "DNA_DEMO": "dna", "NO_NAME_2": "megaball"}[name]
 }
 
+// AudioCue selects scene-relative music, or silence when File is empty.
+type AudioCue struct {
+	File string
+	Loop bool
+}
+type Input struct{ Left, Right, Up, Down bool }
+
 type sourceData struct {
 	Strings map[string]string
 	Numbers map[string][]float64
+	Lists   map[string][]string
 }
 type Scene struct {
-	Descriptor Descriptor
-	Canvas     *ebiten.Image
-	store      *assets.Store
-	surfaces   []*ebiten.Image
-	filters    map[*ebiten.Image]ebiten.Filter
-	data       sourceData
-	render     func()
-	frame      uint64
-	random     uint32
-	err        error
+	Descriptor   Descriptor
+	Canvas       *ebiten.Image
+	store        *assets.Store
+	surfaces     []*ebiten.Image
+	filters      map[*ebiten.Image]ebiten.Filter
+	data         sourceData
+	render       func()
+	frame        uint64
+	random       uint32
+	err          error
+	input        func(Input)
+	audioCue     *AudioCue
+	closeEffects []func() error
 }
 
 func New(id string) (*Scene, error) {
@@ -91,6 +106,7 @@ func New(id string) (*Scene, error) {
 	}
 	s.data = all[d.Page]
 	s.Canvas = s.surface(d.Width, d.Height)
+	s.music(d.Music, true)
 	switch id {
 	case "big-sprite":
 		s.bigSprite()
@@ -108,6 +124,20 @@ func New(id string) (*Scene, error) {
 		s.knucklebuster()
 	case "ehh":
 		s.ehh()
+	case "intro":
+		s.intro()
+	case "reset":
+		s.reset()
+	case "megaball":
+		s.megaball()
+	case "spreadpoint":
+		s.spreadpoint()
+	case "dna":
+		s.dna()
+	case "3d-doc":
+		s.doc()
+	case "starwars":
+		s.starwars()
 	}
 	if s.err != nil {
 		s.Close()
@@ -132,12 +162,24 @@ func (s *Scene) Update() error {
 func (s *Scene) Draw(dst *ebiten.Image)     { dst.DrawImage(s.Canvas, nil) }
 func (s *Scene) Layout(int, int) (int, int) { return s.Descriptor.Width, s.Descriptor.Height }
 func (s *Scene) Close() error {
+	for _, close := range s.closeEffects {
+		close()
+	}
+	s.closeEffects = nil
 	for _, img := range s.surfaces {
 		img.Deallocate()
 	}
 	s.surfaces = nil
 	return s.store.Close()
 }
+
+func (s *Scene) Input(in Input) {
+	if s.input != nil {
+		s.input(in)
+	}
+}
+func (s *Scene) music(file string, loop bool) { s.audioCue = &AudioCue{File: file, Loop: loop} }
+func (s *Scene) TakeAudioCue() *AudioCue      { cue := s.audioCue; s.audioCue = nil; return cue }
 func (s *Scene) asset(name string) *ebiten.Image {
 	img, err := s.store.Texture("" + s.Descriptor.Directory + "/" + name)
 	if err != nil {

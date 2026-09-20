@@ -35,10 +35,12 @@ type Game struct {
 	selection      int
 	notice         string
 	noticeTicks    int
+	loopMusic      bool
+	loaderPaused   bool
 }
 
 func New(c Config) (*Game, error) {
-	g := &Game{config: c, track: "menu/resources/menu.ym"}
+	g := &Game{config: c, track: "menu/resources/menu.ym", loopMusic: true}
 	g.menu = menu.NewGame()
 	g.menu.UseExternalAudio()
 	g.menu.SetScreenHandler(func(name string) { g.pending = screens.DoorID(name) })
@@ -57,6 +59,7 @@ func (g *Game) open(id string) error {
 			g.scene = nil
 		}
 		g.setTrack("menu/resources/menu.ym")
+		g.loopMusic = true
 		return nil
 	}
 	s, err := screens.New(id)
@@ -67,12 +70,26 @@ func (g *Game) open(id string) error {
 		g.scene.Close()
 	}
 	g.scene = s
-	track := "" + s.Descriptor.Directory + "/" + s.Descriptor.Music
-	if strings.HasPrefix(s.Descriptor.Music, "@") {
-		track = strings.TrimPrefix(s.Descriptor.Music, "@")
+	g.consumeAudioCue()
+	return nil
+}
+func (g *Game) consumeAudioCue() {
+	if g.scene == nil {
+		return
+	}
+	cue := g.scene.TakeAudioCue()
+	if cue == nil {
+		return
+	}
+	track := ""
+	if cue.File != "" {
+		track = "" + g.scene.Descriptor.Directory + "/" + cue.File
+		if strings.HasPrefix(cue.File, "@") {
+			track = cue.File[1:]
+		}
 	}
 	g.setTrack(track)
-	return nil
+	g.loopMusic = cue.Loop
 }
 func (g *Game) setTrack(name string) {
 	if g.player != nil {
@@ -80,6 +97,7 @@ func (g *Game) setTrack(name string) {
 		g.player = nil
 	}
 	g.track = name
+	g.loaderPaused = false
 }
 
 func (g *Game) startAudio() error {
@@ -99,12 +117,12 @@ func (g *Game) startAudio() error {
 	var stream *sound.Stream
 	switch strings.ToLower(path.Ext(g.track)) {
 	case ".ym":
-		stream, err = sound.NewYM(data, sound.YMOptions{SampleRate: 48000, Loop: true})
+		stream, err = sound.NewYM(data, sound.YMOptions{SampleRate: 48000, Loop: g.loopMusic})
 	case ".mp3":
 		var decoded *mp3.Stream
 		decoded, err = mp3.DecodeWithSampleRate(48000, bytes.NewReader(data))
 		if err == nil {
-			stream, err = sound.NewPCM16(decoded, sound.PCM16Options{SampleRate: 48000, Loop: true})
+			stream, err = sound.NewPCM16(decoded, sound.PCM16Options{SampleRate: 48000, Loop: g.loopMusic})
 		}
 	default:
 		return fmt.Errorf("unsupported audio asset %q", g.track)
@@ -139,6 +157,11 @@ func (g *Game) Update() error {
 	if g.scene != nil && !g.chooser && inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		g.open("menu")
 	}
+	if g.scene != nil && !g.chooser && inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		if err := g.open("reset"); err != nil {
+			return err
+		}
+	}
 	if g.chooser {
 		list := screens.Catalog()
 		if inpututil.IsKeyJustPressed(ebiten.KeyArrowDown) {
@@ -159,7 +182,9 @@ func (g *Game) Update() error {
 	}
 	var err error
 	if g.scene != nil {
+		g.scene.Input(screens.Input{Left: inpututil.IsKeyJustPressed(ebiten.KeyArrowLeft), Right: inpututil.IsKeyJustPressed(ebiten.KeyArrowRight), Up: inpututil.IsKeyJustPressed(ebiten.KeyArrowUp), Down: inpututil.IsKeyJustPressed(ebiten.KeyArrowDown)})
 		err = g.scene.Update()
+		g.consumeAudioCue()
 	} else {
 		err = g.menu.Update()
 	}
@@ -180,8 +205,10 @@ func (g *Game) Update() error {
 	if g.player != nil {
 		if g.scene == nil && g.menu.IsLoading() {
 			g.player.Pause()
-		} else if !g.player.IsPlaying() {
+			g.loaderPaused = true
+		} else if g.loaderPaused {
 			g.player.Play()
+			g.loaderPaused = false
 		}
 	}
 	return nil

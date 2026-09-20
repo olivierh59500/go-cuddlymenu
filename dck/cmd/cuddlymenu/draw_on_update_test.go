@@ -77,3 +77,27 @@ func TestDrawOnUpdateGameDoesNotRedrawAfterFailedUpdate(t *testing.T) {
 		t.Fatalf("Draw count after failed Update = %d, want 1", inner.draws)
 	}
 }
+
+func TestPALCadenceIsIndependentOfDisplayRefresh(t *testing.T) {
+	previous := ebiten.TPS()
+	defer ebiten.SetTPS(previous)
+	configureTiming()
+	if ebiten.TPS() != 50 {
+		t.Fatalf("playback rate = %d, want PAL 50 Hz", ebiten.TPS())
+	}
+	for _, refresh := range []int{60, 120, 144, 240} {
+		inner := &fakeGame{}
+		game := newDrawOnUpdateGame(inner)
+		for tick := 0; tick < 50; tick++ {
+			if err := game.Update(); err != nil {
+				t.Fatal(err)
+			}
+			for draw := 0; draw < refresh; draw++ {
+				game.Draw(nil)
+			}
+		}
+		if inner.updates != 50 || inner.draws != 50 {
+			t.Fatalf("refresh %d advanced animation: updates=%d draws=%d", refresh, inner.updates, inner.draws)
+		}
+	}
+}

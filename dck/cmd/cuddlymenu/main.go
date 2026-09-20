@@ -30,6 +30,7 @@ func main() {
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Cuddly Demos / DCK - F1: screens, Esc: menu")
 	ebiten.SetScreenClearedEveryFrame(false)
+	configureTiming()
 	game, err := app.New(app.Config{Screen: *id, Muted: *muted})
 	if err != nil {
 		log.Fatal(err)
@@ -38,4 +39,10 @@ func main() {
 	if err := ebiten.RunGame(newDrawOnUpdateGame(game)); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func configureTiming() {
+	// Animation advances in Update only. Never use SyncWithFPS: modern displays
+	// can refresh at 120/144 Hz while these PAL scenes need exactly 50 ticks/s.
+	ebiten.SetTPS(screens.TicksPerSecond)
 }

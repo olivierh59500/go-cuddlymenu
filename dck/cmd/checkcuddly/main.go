@@ -99,7 +99,14 @@ func run() error {
 	if r.NativeHasSNDH {
 		return fmt.Errorf("SNDH leaked into native assets")
 	}
-	for _, d := range screens.Catalog() {
+	selections := screens.Catalog()
+	for i := 1; i <= 4; i++ {
+		d, _ := screens.Find("spreadpoint")
+		d.ID = fmt.Sprintf("spreadpoint-intro-%d", i)
+		d.Music = fmt.Sprintf("intro%d.mp3", i)
+		selections = append(selections, d)
+	}
+	for _, d := range selections {
 		if !d.Ready {
 			continue
 		}
