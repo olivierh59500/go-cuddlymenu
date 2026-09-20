@@ -39,9 +39,12 @@ The original implementation remains at its original paths. Run it with `go run .
 
 The construction-kit version is in [dck/](dck/README.md). Run `go run ./dck/cmd/cuddlymenu` from this directory. Both versions share the original assets.
 
-The DCK version now connects the menu to eight native Cuddly screens. F1 opens the
-screen selector; Esc or Space returns from a screen. `-list` shows which ports are
-available, and `-screen knucklebuster` launches one directly. The Cuddly audit and
-porting guide covers all site entries, media provenance,
-validation and the screens still to implement. Original desktop/Android commands
+The DCK version connects the menu to all thirteen main Cuddly screens, plus
+Introduction and Reset. NATIVE Credits is excluded. Playback runs at a fixed PAL
+cadence of 50 updates per second, independent of monitor refresh, with normal
+music playback speed. F1 opens the selector; Esc or Space returns from a screen;
+R opens Reset. `-list` lists the ports and `-screen dna` launches one directly.
+
+The Cuddly porting guide covers effect reuse, controls,
+media provenance and visual/timing validation. Original desktop/Android commands
 continue to launch the preserved original menu.

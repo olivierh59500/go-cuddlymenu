@@ -4,15 +4,25 @@ This directory contains the construction-kit version of go-cuddlymenu. The origi
 
 Run the original with `go run ./cmd/cuddlymenu` and this version with `go run ./dck/cmd/cuddlymenu` from the repository root.
 
-The DCK menu now opens eight native Cuddly screens: Big Sprite, Colorshock II,
-Ehhh, Mega Scroller, Digi Sound, LED Scroller, Fullscreen and Knucklebuster.
-Press F1 for selection and Esc or Space to return from a screen.
+The DCK menu opens all thirteen main Cuddly screens. Introduction and Reset are
+also available from the selector: fifteen screens plus the existing menu. NATIVE
+Credits is intentionally excluded.
 
 ```sh
 go run ./dck/cmd/cuddlymenu -list
-go run ./dck/cmd/cuddlymenu -screen knucklebuster
+go run ./dck/cmd/cuddlymenu -screen intro
+go run ./dck/cmd/cuddlymenu -screen spreadpoint
+go run ./dck/cmd/cuddlymenu -screen dna
 ```
 
-The complete source audit and porting guide describes all
-17 entries, downloaded assets, selected YM files and the remaining ports. Runtime
-code is Go/Ebitengine; the original implementation is retained solely as a local visual reference.
+F1 opens the selector; arrows and Enter select a screen. Esc or Space returns to
+the menu, and R opens Reset from an active screen. In Megaball, Up/Down selects one
+of the nine parameters and Left/Right changes it. `-mute` disables device audio.
+
+Playback uses **50 logical updates per second**, independently of display refresh.
+Drawing never advances the animation. YM and recorded audio keep their normal
+sample clock; the speed of the original implementation in a modern browser is not reproduced.
+
+The source audit and porting guide documents each screen,
+shared effects, music, timing and the 94 visual checkpoints. Runtime code is
+Go/Ebitengine; the original implementation remains solely an archived visual reference.

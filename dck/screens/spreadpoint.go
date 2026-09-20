@@ -31,8 +31,8 @@ func (s *Scene) spreadpoint() {
 	in, out, raster, font, gradient, dnaFont, dnaGradient, ball := s.asset("tcb-in.png"), s.asset("tcb-out.png"), s.asset("tcb-raster.png"), s.asset("font.png"), s.asset("gradient.png"), s.asset("font_dna.png"), s.asset("gradient_dna.png"), s.asset("ball.png")
 	main, logo, spread, textSurface, dnaText := s.surface(416, 276), s.surface(128, 128), s.surface(320, 200), s.surface(len([]rune(s.data.Strings["text"]))*8+320, 6), s.surface(320, 25)
 	s.filters[s.Canvas] = ebiten.FilterNearest
+	// Stretch single-pixel ramps without sampling transparent side padding.
 	s.filters[spread] = ebiten.FilterNearest
-	s.filters[logo] = ebiten.FilterNearest
 	grid := scrolling.BitmapGrid{Image: font, Width: 8, Height: 6, Columns: font.Bounds().Dx() / 8, ColumnSpan: float64(font.Bounds().Dx()) / 8, First: 32, Filter: ebiten.FilterLinear}
 	grid.Print(textSurface, s.data.Strings["text"], 0, 0, 1, 1)
 	head := s.surface(320, 6)
@@ -129,7 +129,9 @@ func (s *Scene) spreadpoint() {
 		x := 64 - 64*z
 		logo.Clear()
 		s.transform(logo, in, x, 45+40*y, z, z, 0, 0, 0, 1, ebiten.BlendSourceOver)
+		s.filters[logo] = ebiten.FilterNearest
 		s.transform(logo, raster, 0, 0, 128, 1, 0, 0, 0, 1, ebiten.BlendSourceIn)
+		s.filters[logo] = ebiten.FilterLinear
 		s.transform(logo, out, x, 45+40*y, z, z, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		s.draw(main, logo, 148, 29)
 		if iteration >= 1952 {
