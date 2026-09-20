@@ -1,6 +1,8 @@
 package menu
 
 import (
+	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -90,10 +92,11 @@ func (t *TileSet) Tile(index int) *ebiten.Image {
 }
 
 type TileMap struct {
-	Data     [][]int
-	Tiles    *TileSet
-	WidthPx  int
-	HeightPx int
+	scrollRenderer *scrolling.Scrolling
+	Data           [][]int
+	Tiles          *TileSet
+	WidthPx        int
+	HeightPx       int
 }
 
 func NewTileMap(data [][]int, tiles *TileSet) *TileMap {
@@ -115,32 +118,27 @@ func (m *TileMap) Draw(dst *ebiten.Image, offsetX, offsetY, dstX, dstY, viewW, v
 		return
 	}
 	offsetX, offsetY = m.clip(offsetX, offsetY, viewW, viewH)
-	startX := offsetX / m.Tiles.TileW
-	startY := offsetY / m.Tiles.TileH
-	offX := offsetX % m.Tiles.TileW
-	offY := offsetY % m.Tiles.TileH
-	tilesX := viewW/m.Tiles.TileW + 2
-	tilesY := viewH/m.Tiles.TileH + 2
-	maxY := len(m.Data)
-	maxX := len(m.Data[0])
-
-	var op ebiten.DrawImageOptions
-	for y := 0; y < tilesY; y++ {
-		mapY := startY + y
-		if mapY < 0 || mapY >= maxY {
-			continue
-		}
-		for x := 0; x < tilesX; x++ {
-			mapX := startX + x
-			if mapX < 0 || mapX >= maxX {
-				continue
+	if len(m.Data) == 1 {
+		if m.scrollRenderer == nil {
+			images := make([]*ebiten.Image, len(m.Data[0]))
+			for i, index := range m.Data[0] {
+				images[i] = m.Tiles.Tile(index)
 			}
-			tile := m.Tiles.Tile(m.Data[mapY][mapX])
-			op.GeoM.Reset()
-			op.GeoM.Translate(float64(dstX+x*m.Tiles.TileW-offX), float64(dstY+y*m.Tiles.TileH-offY))
-			dst.DrawImage(tile, &op)
+			var err error
+			m.scrollRenderer, err = scrolling.FromImages(images, float64(m.Tiles.TileW))
+			if err != nil {
+				panic(err)
+			}
 		}
+		state := scrolling.IdentityState()
+		state.X = float64(dstX - offsetX)
+		state.Y = float64(dstY - offsetY)
+		state.First = offsetX / m.Tiles.TileW
+		state.End = state.First + viewW/m.Tiles.TileW + 2
+		m.scrollRenderer.DrawAt(dst, state)
+		return
 	}
+	composite.Grid{Columns: len(m.Data[0]), Rows: len(m.Data), Cell: image.Pt(m.Tiles.TileW, m.Tiles.TileH), Overscan: 2, Tile: func(x, y int) *ebiten.Image { return m.Tiles.Tile(m.Data[y][x]) }}.Draw(dst, image.Pt(offsetX, offsetY), image.Pt(dstX, dstY), image.Pt(viewW, viewH))
 }
 
 func (m *TileMap) clip(offsetX, offsetY, viewW, viewH int) (int, int) {
