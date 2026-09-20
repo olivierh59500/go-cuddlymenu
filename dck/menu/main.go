@@ -63,11 +63,13 @@ type DudeAnimations struct {
 }
 
 type Game struct {
-	assets       *Assets
-	audioContext *audio.Context
-	audioPlayer  *audio.Player
-	ymPlayer     *YMPlayer
-	audioReady   bool
+	screenHandler   func(string)
+	requestedScreen string
+	assets          *Assets
+	audioContext    *audio.Context
+	audioPlayer     *audio.Player
+	ymPlayer        *YMPlayer
+	audioReady      bool
 
 	mapTiles      *TileSet
 	dudeTiles     *TileSet
@@ -505,6 +507,7 @@ func (g *Game) handleLoad(load bool) {
 }
 
 func (g *Game) startLoading(name string) {
+	g.requestedScreen = name
 	g.loading = LoaderState{
 		Active: true,
 		Label:  "LOADING " + name,
@@ -532,6 +535,11 @@ func (g *Game) updateLoading() {
 		return
 	}
 	g.loading.Active = false
+	if g.screenHandler != nil && g.requestedScreen != "" {
+		name := g.requestedScreen
+		g.requestedScreen = ""
+		g.screenHandler(name)
+	}
 	g.autoPilot.NowLoadScreen = false
 	g.autoPilot.WaitToLoad = 80
 	if g.audioPlayer != nil && !g.audioPlayer.IsPlaying() {

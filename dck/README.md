@@ -4,4 +4,15 @@ This directory contains the construction-kit version of go-cuddlymenu. The origi
 
 Run the original with `go run ./cmd/cuddlymenu` and this version with `go run ./dck/cmd/cuddlymenu` from the repository root.
 
-The choreography and assets stay local; reusable rendering and effects live in `../../lib/democonstructionkit`. Second Reality retains its original ST3 music synchronization.
+The DCK menu now opens eight native Cuddly screens: Big Sprite, Colorshock II,
+Ehhh, Mega Scroller, Digi Sound, LED Scroller, Fullscreen and Knucklebuster.
+Press F1 for selection and Esc or Space to return from a screen.
+
+```sh
+go run ./dck/cmd/cuddlymenu -list
+go run ./dck/cmd/cuddlymenu -screen knucklebuster
+```
+
+The complete source audit and porting guide describes all
+17 entries, downloaded assets, selected YM files and the remaining ports. Runtime
+code is Go/Ebitengine; the original implementation is retained solely as a local visual reference.

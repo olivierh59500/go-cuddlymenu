@@ -1,0 +1,181 @@
+package screens
+
+import (
+	"image"
+	"image/color"
+	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/olivierh59500/democonstructionkit/composite"
+)
+
+func (s *Scene) digi() {
+	union, logo, font := s.asset("unionlogo.png"), s.asset("logo.png"), s.asset("syncfont.png")
+	stage := s.surface(640, 400)
+	s.filters[stage] = ebiten.FilterNearest
+	s.filters[s.Canvas] = ebiten.FilterNearest
+	r := s.ring(stage, font, 64, 54, 32, s.data.Strings["text"], 8)
+	var letters []*ebiten.Image
+	for _, ch := range "HAEY" {
+		letters = append(letters, s.asset(string(ch)+".png"))
+	}
+	curve := digiCurve()
+	counter, upd := 0, 0.0
+	phase1, phase2 := 0.0, 0.0
+	s.render = func() {
+		clearBlack(s.Canvas)
+		clearBlack(stage)
+		bounce := 200 - math.Abs(math.Sin(phase1)*160)
+		phase1 += .03
+		for i := 0; i < 170; i++ {
+			s.part(stage, logo, composite.Region{Y: float64(i), Width: 335, Height: 1}, 320+curve[(counter+i)%len(curve)]-167.5, 160+bounce/2+float64(i)-.5, 1, 1)
+		}
+		counter++
+		s.transform(stage, union, 320, bounce+14, 1, 1, 0, float64(union.Bounds().Dx()/2), float64(union.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
+		r.Step()
+		r.DrawAt(stage, 0, 340-math.Abs(math.Sin(phase2)*40))
+		phase2 += .06
+		for i, img := range letters {
+			inter := upd + float64(i*5)
+			x := 306 + 306*math.Sin(inter/25)*math.Cos(inter/300)
+			y := 207 + 90.5*math.Sin(inter/37) + 90.5*math.Cos(inter/17)
+			s.draw(stage, img, x, y)
+		}
+		upd++
+		s.draw(s.Canvas, stage, 64, 70)
+	}
+}
+
+// digiCurve retains the source's overlapping writes between table sections.
+func digiCurve() []float64 {
+	var table []float64
+	put := func(i int, v float64) {
+		for len(table) <= i {
+			table = append(table, 0)
+		}
+		table[i] = v
+	}
+	for i := 0; i < 252; i++ {
+		put(i, 40*math.Sin(float64(i)*.05))
+	}
+	base := len(table)
+	for i := 0; i < 30; i++ {
+		put(base+i, 40*math.Sin(float64(i)*.05))
+	}
+	for i := 30; i < 80; i++ {
+		put(base+i, 40)
+	}
+	for i := 30; i < 90; i++ {
+		put(base+50+i, 40*math.Sin(float64(i)*.05))
+	}
+	for i := 88; i < 150; i++ {
+		put(base+50+i, -40)
+	}
+	for i := 90; i < 149; i++ {
+		put(base+110+i, 40*math.Sin(9.6+float64(i)*.02))
+	}
+	for _, segment := range []struct {
+		count int
+		value func(float64) float64
+	}{
+		{252, func(i float64) float64 { return 40 * math.Sin(i*.05) }}, {504, func(i float64) float64 { return 40 * math.Sin(i*.025) }}, {315, func(i float64) float64 { return 40*math.Sin(i*.02) + 5*math.Sin(i*.5) }}, {630, func(i float64) float64 { return 40 * math.Sin(i*.01) }}, {628, func(i float64) float64 {
+			v := 40 * math.Sin(i*.01)
+			if i < 100 || i >= 200 && i < 300 {
+				v += 2 * math.Sin(i)
+			}
+			return v
+		}}, {200, func(i float64) float64 { return 40 * math.Sin(i*.05) }},
+	} {
+		for i := 0; i < segment.count; i++ {
+			table = append(table, segment.value(float64(i)))
+		}
+	}
+	return table
+}
+
+func (s *Scene) led() {
+	font, tile, the, bubble := s.asset("ledfont.png"), s.asset("tcbtile.png"), s.asset("the.png"), s.asset("bubble.png")
+	stage, led, off, warped, tiled := s.surface(640, 400), s.surface(640, 112), s.surface(384, 233), s.surface(384, 233), s.surface(384, 233)
+	s.filters[s.Canvas] = ebiten.FilterNearest
+	s.filters[stage] = ebiten.FilterNearest
+	for x := 0; x < 384; x += 32 {
+		for y := 0; y < 233; y += 33 {
+			s.draw(tiled, tile, float64(x), float64(y))
+		}
+	}
+	gradient := ledGradient()
+	s.surfaces = append(s.surfaces, gradient)
+	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 6, Spatial: .08, Speed: .2}}}
+	r := s.ring(led, font, 128, 108, 32, s.data.Strings["text"], 16)
+	var letters []*ebiten.Image
+	for _, name := range []string{"c", "a", "r", "e", "b", "e", "a", "r", "s"} {
+		letters = append(letters, s.asset(name+".png"))
+	}
+	y, bounce, ledBounce, gradientY := 0.0, 0.0, 0.0, 0.0
+	variance, delta := 75.0, -1.0
+	phases := []float64{0, 2, 4, 6, 8, 6, 4, 2, 0}
+	load := func() {
+		warped.Clear()
+		s.draw(off, tiled, 0, y)
+		y -= 2
+		if y <= -33 {
+			y = 0
+		}
+		wave.DrawAt(warped, off, -32, 0)
+		wave.Advance()
+		s.transform(warped, the, 160, 95-math.Abs(math.Sin(bounce)*80), .5, .5, 0, float64(the.Bounds().Dx()/2), float64(the.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
+		bounce += .045
+	}
+	load() // The reference preloads one background frame before its intro wait.
+	s.render = func() {
+		clearBlack(s.Canvas)
+		stage.Clear()
+		load()
+		s.transform(warped, gradient, 0, gradientY, 1, 1, 0, 0, 0, .8, ebiten.BlendSourceOver)
+		gradientY--
+		if gradientY <= -1400 {
+			gradientY = 0
+		}
+		s.transform(stage, warped, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
+		for i, img := range letters {
+			phases[i] += 1.2
+			s.draw(stage, img, float64(32+64*i), 75-variance*math.Cos(phases[i]/10))
+		}
+		variance += delta
+		if variance <= 20 {
+			variance = 20
+			delta = 1
+		}
+		if variance >= 75 {
+			variance = 75
+			delta = -1
+		}
+		s.draw(s.Canvas, stage, 64, 70)
+		led.Clear()
+		for x := 0; x < 640; x += 16 {
+			for y := 0; y < 112; y += 16 {
+				s.draw(led, bubble, float64(x-2), float64(y))
+			}
+		}
+		r.Step()
+		r.DrawAt(led, 0, 2)
+		s.draw(s.Canvas, led, 64, 340-math.Abs(math.Sin(ledBounce)*60))
+		ledBounce += .08
+	}
+}
+
+func ledGradient() *ebiten.Image {
+	stops := []color.RGBA{{255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {0, 255, 0, 255}, {255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {0, 255, 0, 255}}
+	pixels := image.NewRGBA(image.Rect(0, 0, 384, 2000))
+	for y := 0; y < 2000; y++ {
+		p := (float64(y) + .5) / 2000 * 10
+		i := min(9, int(p))
+		t := p - float64(i)
+		a, b := stops[i], stops[i+1]
+		c := color.RGBA{uint8(math.Round(float64(a.R)*(1-t) + float64(b.R)*t)), uint8(math.Round(float64(a.G)*(1-t) + float64(b.G)*t)), uint8(math.Round(float64(a.B)*(1-t) + float64(b.B)*t)), 255}
+		for x := 0; x < 384; x++ {
+			pixels.SetRGBA(x, y, c)
+		}
+	}
+	return ebiten.NewImageFromImage(pixels)
+}

@@ -8,6 +8,11 @@ require (
 )
 
 require (
+	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
+	github.com/olivierh59500/go-zikmu v0.0.0-20260916172410-b245427b8556 // indirect
+)
+
+require (
 	github.com/ebitengine/gomobile v0.0.0-20250923094054-ea854a63cce1 // indirect
 	github.com/ebitengine/hideconsole v1.0.0 // indirect
 	github.com/ebitengine/oto/v3 v3.4.1 // indirect
@@ -19,3 +24,5 @@ require (
 )
 
 replace github.com/olivierh59500/democonstructionkit => ../../lib/democonstructionkit
+
+replace github.com/olivierh59500/ym-player => ../../lib/ym-player

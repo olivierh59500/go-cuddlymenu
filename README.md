@@ -38,3 +38,10 @@ La migration du synthétiseur, la suppression des allocations dans le flux PCM e
 The original implementation remains at its original paths. Run it with `go run ./cmd/cuddlymenu`.
 
 The construction-kit version is in [dck/](dck/README.md). Run `go run ./dck/cmd/cuddlymenu` from this directory. Both versions share the original assets.
+
+The DCK version now connects the menu to eight native Cuddly screens. F1 opens the
+screen selector; Esc or Space returns from a screen. `-list` shows which ports are
+available, and `-screen knucklebuster` launches one directly. The Cuddly audit and
+porting guide covers all site entries, media provenance,
+validation and the screens still to implement. Original desktop/Android commands
+continue to launch the preserved original menu.
