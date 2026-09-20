@@ -2,24 +2,34 @@ package screens
 
 import (
 	"fmt"
+	"image"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) intro() {
 	calvin, main, union, logo := s.asset("calvin.png"), s.asset("main.png"), s.asset("unionlogo.png"), s.asset("tcblogodist.png")
 	stars := []*ebiten.Image{s.asset("star1.png"), s.asset("star2.png")}
-	a, b, c, dist := s.surface(400, 60), s.surface(460, 120), s.surface(460, 80), s.surface(256, 122)
+	a, dist := s.surface(400, 60), s.surface(256, 122)
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	s.filters[c] = ebiten.FilterNearest
 	s.draw(a, logo, 46, 0)
 	s.draw(dist, union, 0, 0)
 	xwave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, CenterStrips: true, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 7, Spatial: .03, Speed: -.035}, {Amplitude: 7, Spatial: .01, Speed: .05}}}
 	ywave := composite.WaveStrips{Axis: composite.Columns, Thickness: 1, CenterStrips: true, PixelSnap: true, Filter: ebiten.FilterNearest, Waves: []composite.StripWave{{Amplitude: 4, Spatial: .02, Speed: -.035}, {Amplitude: 4, Spatial: .005, Speed: .05}}}
+	chain, err := composite.NewWaveChain(
+		composite.WavePass{Size: image.Pt(460, 120), X: 230, Y: 40, Wave: xwave},
+		composite.WavePass{Size: image.Pt(460, 80), X: 0, Y: 35, Wave: ywave},
+	)
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, chain.Close)
 	curve := make([]float64, 252)
 	for i := 0; i < 252; i++ {
 		curve = append(curve, 80*math.Sin(float64(i)*.05))
@@ -47,8 +57,17 @@ func (s *Scene) intro() {
 		curve = append(curve, 40*math.Sin(float64(i)*.05))
 	}
 	px, py := s.data.Numbers["starposX"], s.data.Numbers["starposY"]
-	timer, index, pos, which, second, mode, wait := 500, 0, 0, 0, 0, 1, 20
-	zoom, rotation := 1.0, 0.0
+	profile := composite.ProfileStrips{Offsets: curve, Speed: 2, Thickness: 1, Filter: ebiten.FilterNearest}
+	points := make([]sprites.SparklePoint, 9)
+	for i := range points {
+		points[i] = sprites.SparklePoint{X: px[i], Y: py[i]}
+	}
+	sparkles, err := sprites.NewSparkles(sprites.SparkleConfig{Images: []sprites.SparkleImage{{Image: stars[0], Spin: 10}, {Image: stars[1], Angles: []float64{0, 45}}}, Positions: points, StartScale: 1, EndScale: 0, ScaleStep: -.025, PauseTicks: 20, Filter: ebiten.FilterNearest})
+	if err != nil {
+		s.err = err
+		return
+	}
+	timer := 500
 	s.music("", false)
 	s.render = func() {
 		clearBlack(s.Canvas)
@@ -64,47 +83,13 @@ func (s *Scene) intro() {
 			timer = -1
 		}
 		s.draw(s.Canvas, main, 0, 0)
-		// The nearest-filtered destination snaps half-row anchors upward.
-		for row := 0; row < 240; row++ {
-			s.part(s.Canvas, dist, composite.Region{Y: float64(row), Width: 256, Height: 1}, 384+curve[(index+row)%len(curve)]-128, 204+float64(row), 1, 1)
-		}
-		index += 2
-		b.Clear()
-		c.Clear()
-		xwave.DrawAt(b, a, 230, 40)
-		xwave.Advance()
-		ywave.DrawAt(c, b, 0, 35)
-		ywave.Advance()
-		s.transform(s.Canvas, c, 384, 130, 2, 2, 0, 230, 40, 1, ebiten.BlendSourceOver)
-		if mode == 1 {
-			img := stars[which]
-			s.transform(s.Canvas, img, px[pos], py[pos], zoom, zoom, rotation, float64(img.Bounds().Dx()/2), float64(img.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
-			if which == 0 {
-				rotation += 10
-				if rotation >= 360 {
-					rotation = 0
-				}
-			} else {
-				rotation = float64(second) * 45
-			}
-			zoom -= .025
-			if zoom <= 0 {
-				zoom = 1
-				mode = 2
-			}
-		}
-		if mode == 2 {
-			wait--
-			if wait <= 0 {
-				wait = 20
-				which = (which + 1) % 2
-				pos = (pos + 1) % 9
-				mode = 1
-				if which == 1 {
-					second = (second + 1) % 2
-				}
-			}
-		}
+		profile.DrawAt(s.Canvas, dist, 256, 204)
+		profile.Advance()
+		warped := chain.Render(a)
+		chain.Advance()
+		s.transform(s.Canvas, warped, 384, 130, 2, 2, 0, 230, 40, 1, ebiten.BlendSourceOver)
+		sparkles.DrawAt(s.Canvas, 0, 0)
+		sparkles.Advance()
 	}
 }
 

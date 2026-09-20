@@ -56,6 +56,18 @@ func DoorID(name string) string {
 	return map[string]string{"BIG_SPRITE": "big-sprite", "COLORSHOCK_II": "colorshock", "NO_NAME_1": "ehh", "MEGA_SCROLLER": "megascroller", "SPREADPOINT": "spreadpoint", "DIGI_DEMO": "digi", "LED_SCROLLER": "led", "DOC": "3d-doc", "FULLSCREEN": "fullscreen", "STARWARS_DEMO": "starwars", "KNUCKLE_BUSTER": "knucklebuster", "DNA_DEMO": "dna", "NO_NAME_2": "megaball"}[name]
 }
 
+func DoorName(id string) string {
+	if id == "menu" {
+		return "MENU"
+	}
+	for _, name := range []string{"BIG_SPRITE", "COLORSHOCK_II", "NO_NAME_1", "MEGA_SCROLLER", "SPREADPOINT", "DIGI_DEMO", "LED_SCROLLER", "DOC", "FULLSCREEN", "STARWARS_DEMO", "KNUCKLE_BUSTER", "DNA_DEMO", "NO_NAME_2"} {
+		if DoorID(name) == id {
+			return name
+		}
+	}
+	return ""
+}
+
 // AudioCue selects scene-relative music, or silence when File is empty.
 type AudioCue struct {
 	File string

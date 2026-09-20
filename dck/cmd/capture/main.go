@@ -11,11 +11,13 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	capture "github.com/olivierh59500/democonstructionkit/fidelity/ebiten"
+	"go-cuddlymenu/dck/loader"
 	"go-cuddlymenu/dck/screens"
 )
 
 func main() {
 	id := flag.String("screen", "colorshock", "native screen ID")
+	loading := flag.String("loader", "", "capture an original loader by door name, e.g. BIG_SPRITE")
 	out := flag.String("out", "captures/native", "capture directory")
 	framesFlag := flag.String("frames", "0,60,240,600", "capture ticks")
 	flag.Parse()
@@ -27,6 +29,14 @@ func main() {
 			os.Exit(1)
 		}
 		frames = append(frames, n)
+	}
+	if *loading != "" {
+		err := capture.Run(capture.Config{Directory: filepath.Join(*out, "cuddly_loader_"+*loading), Frames: frames, Width: loader.Width, Height: loader.Height}, func() (ebiten.Game, error) { return loader.New(*loading) })
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
 	}
 	d, ok := screens.Find(*id)
 	if !ok || !d.Ready {

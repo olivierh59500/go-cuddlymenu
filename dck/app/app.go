@@ -11,38 +11,47 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
+	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	device "github.com/olivierh59500/democonstructionkit/sound/ebiten"
 	media "go-cuddlymenu/assets/cuddly"
+	"go-cuddlymenu/dck/loader"
 	"go-cuddlymenu/dck/menu"
 	"go-cuddlymenu/dck/screens"
 )
 
 type Config struct {
-	Screen string
-	Muted  bool
+	Screen        string
+	Muted         bool
+	TouchControls bool
 }
 type Game struct {
-	menu           *menu.Game
-	scene          *screens.Scene
-	context        *audio.Context
-	player         *device.Player
-	config         Config
-	track, pending string
-	chooser        bool
-	selection      int
-	notice         string
-	noticeTicks    int
-	loopMusic      bool
-	loaderPaused   bool
+	menu                      *menu.Game
+	scene                     *screens.Scene
+	context                   *audio.Context
+	player                    *device.Player
+	config                    Config
+	track, pending            string
+	chooser                   bool
+	selection                 int
+	notice                    string
+	noticeTicks               int
+	loopMusic                 bool
+	loaderPaused              bool
+	transition                *loader.Screen
+	target                    string
+	layoutWidth, layoutHeight int
+	touchIDs                  []ebiten.TouchID
 }
 
 func New(c Config) (*Game, error) {
 	g := &Game{config: c, track: "menu/resources/menu.ym", loopMusic: true}
 	g.menu = menu.NewGame()
 	g.menu.UseExternalAudio()
+	if c.TouchControls {
+		g.menu.UseTouchControls()
+	}
 	g.menu.SetScreenHandler(func(name string) { g.pending = screens.DoorID(name) })
 	if c.Screen != "" && c.Screen != "menu" {
 		if err := g.open(c.Screen); err != nil {
@@ -52,7 +61,34 @@ func New(c Config) (*Game, error) {
 	return g, nil
 }
 
+// Begin loads a production through the original countdown. Intro and Reset have
+// their own entry phases and do not use the floppy loader.
+func (g *Game) Begin(id string) error {
+	name := screens.DoorName(id)
+	if name == "" {
+		return g.open(id)
+	}
+	next, err := loader.New(name)
+	if err != nil {
+		return err
+	}
+	if g.transition != nil {
+		g.transition.Close()
+	}
+	g.transition = next
+	g.target = id
+	g.setTrack(loader.Music)
+	g.loopMusic = true
+	return nil
+}
+
 func (g *Game) open(id string) error {
+	if g.transition != nil {
+		g.transition.Close()
+		g.transition = nil
+		g.target = ""
+	}
+
 	if id == "menu" || id == "" {
 		if g.scene != nil {
 			g.scene.Close()
@@ -118,6 +154,12 @@ func (g *Game) startAudio() error {
 	switch strings.ToLower(path.Ext(g.track)) {
 	case ".ym":
 		stream, err = sound.NewYM(data, sound.YMOptions{SampleRate: 48000, Loop: g.loopMusic})
+	case ".wav":
+		var decoded *wav.Stream
+		decoded, err = wav.DecodeWithSampleRate(48000, bytes.NewReader(data))
+		if err == nil {
+			stream, err = sound.NewPCM16(decoded, sound.PCM16Options{SampleRate: 48000, Loop: g.loopMusic})
+		}
 	case ".mp3":
 		var decoded *mp3.Stream
 		decoded, err = mp3.DecodeWithSampleRate(48000, bytes.NewReader(data))
@@ -144,36 +186,57 @@ func (g *Game) Update() error {
 	if g.noticeTicks > 0 {
 		g.noticeTicks--
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyF1) {
+	in := g.readControls()
+	if in.chooser && g.transition == nil {
 		g.chooser = !g.chooser
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+	if in.back {
 		if g.chooser {
 			g.chooser = false
-		} else {
-			g.open("menu")
+		} else if g.scene != nil || g.transition != nil {
+			if err := g.Begin("menu"); err != nil {
+				return err
+			}
 		}
 	}
-	if g.scene != nil && !g.chooser && inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		g.open("menu")
-	}
-	if g.scene != nil && !g.chooser && inpututil.IsKeyJustPressed(ebiten.KeyR) {
+	if in.reset && !g.chooser {
 		if err := g.open("reset"); err != nil {
 			return err
 		}
 	}
+	if g.transition != nil {
+		if err := g.transition.Update(); err != nil {
+			return err
+		}
+		if g.transition.Done() {
+			if err := g.open(g.target); err != nil {
+				return err
+			}
+		}
+		if err := g.startAudio(); err != nil {
+			return err
+		}
+		if g.transition != nil && g.player != nil {
+			g.player.SetVolume(.7 * g.transition.Volume())
+		}
+		return nil
+	}
 	if g.chooser {
 		list := screens.Catalog()
-		if inpututil.IsKeyJustPressed(ebiten.KeyArrowDown) {
+		if in.down {
 			g.selection = (g.selection + 1) % len(list)
 		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) {
+		if in.up {
 			g.selection = (g.selection + len(list) - 1) % len(list)
 		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
-			if err := g.open(list[g.selection].ID); err != nil {
+		if in.chosen >= 0 {
+			g.selection = in.chosen
+			in.confirm = true
+		}
+		if in.confirm {
+			if err := g.Begin(list[g.selection].ID); err != nil {
 				g.notice = err.Error()
-				g.noticeTicks = 180
+				g.noticeTicks = 150
 			} else {
 				g.chooser = false
 			}
@@ -182,7 +245,7 @@ func (g *Game) Update() error {
 	}
 	var err error
 	if g.scene != nil {
-		g.scene.Input(screens.Input{Left: inpututil.IsKeyJustPressed(ebiten.KeyArrowLeft), Right: inpututil.IsKeyJustPressed(ebiten.KeyArrowRight), Up: inpututil.IsKeyJustPressed(ebiten.KeyArrowUp), Down: inpututil.IsKeyJustPressed(ebiten.KeyArrowDown)})
+		g.scene.Input(screens.Input{Left: in.left, Right: in.right, Up: in.up, Down: in.down})
 		err = g.scene.Update()
 		g.consumeAudioCue()
 	} else {
@@ -194,34 +257,29 @@ func (g *Game) Update() error {
 	if g.pending != "" {
 		id := g.pending
 		g.pending = ""
-		if err := g.open(id); err != nil {
-			g.notice = err.Error()
-			g.noticeTicks = 180
+		if err = g.Begin(id); err != nil {
+			return err
 		}
 	}
-	if err = g.startAudio(); err != nil {
-		return err
-	}
-	if g.player != nil {
-		if g.scene == nil && g.menu.IsLoading() {
-			g.player.Pause()
-			g.loaderPaused = true
-		} else if g.loaderPaused {
-			g.player.Play()
-			g.loaderPaused = false
-		}
-	}
-	return nil
+	return g.startAudio()
 }
 func (g *Game) Draw(dst *ebiten.Image) {
-	if g.scene != nil {
-		g.scene.Draw(dst)
+	if g.transition != nil {
+		dst.Fill(color.Black)
+		op := ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(dst.Bounds().Dx()-768)/2, 0)
+		dst.DrawImage(g.transition.Canvas, &op)
+	} else if g.scene != nil {
+		dst.Fill(color.Black)
+		op := ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(dst.Bounds().Dx()-g.scene.Descriptor.Width)/2, 0)
+		dst.DrawImage(g.scene.Canvas, &op)
 	} else {
 		g.menu.Draw(dst)
 	}
 	if g.chooser {
 		dst.Fill(color.RGBA{10, 14, 28, 255})
-		ebitenutil.DebugPrintAt(dst, "CUDDLY DEMOS  /  Up, Down, Enter   /   Esc: back", 24, 20)
+		ebitenutil.DebugPrintAt(dst, "CUDDLY DEMOS  /  Up, Down, Enter   /   Esc: back", g.panelX(), 20)
 		for i, d := range screens.Catalog() {
 			prefix := "  "
 			if i == g.selection {
@@ -231,20 +289,36 @@ func (g *Game) Draw(dst *ebiten.Image) {
 			if !d.Ready {
 				suffix = " (coming later)"
 			}
-			ebitenutil.DebugPrintAt(dst, prefix+d.Title+suffix, 24, 54+i*24)
+			ebitenutil.DebugPrintAt(dst, prefix+d.Title+suffix, g.panelX(), 54+i*28)
 		}
 	}
+	g.drawControls(dst)
 	if g.noticeTicks > 0 {
 		ebitenutil.DebugPrintAt(dst, g.notice, 20, 10)
 	}
 }
 func (g *Game) Layout(w, h int) (int, int) {
-	if g.scene != nil {
-		return g.scene.Layout(w, h)
+	width, height := 768, 540
+	if g.transition != nil {
+		width, height = loader.Width, loader.Height
 	}
-	return g.menu.Layout(w, h)
+	if g.transition == nil {
+		if g.scene != nil {
+			width, height = g.scene.Layout(w, h)
+		} else {
+			width, height = g.menu.Layout(w, h)
+		}
+	}
+	if g.touchEnabled() && h > 0 {
+		width = max(width, min(1280, (w*height+h-1)/h))
+	}
+	g.layoutWidth, g.layoutHeight = width, height
+	return width, height
 }
 func (g *Game) Close() error {
+	if g.transition != nil {
+		g.transition.Close()
+	}
 	if g.player != nil {
 		g.player.Close()
 	}
@@ -252,4 +326,29 @@ func (g *Game) Close() error {
 		g.scene.Close()
 	}
 	return g.menu.Close()
+}
+
+func (g *Game) CurrentScreen() string {
+	if g.transition != nil {
+		return "loader:" + g.target
+	}
+	if g.scene != nil {
+		return g.scene.Descriptor.ID
+	}
+	return "menu"
+}
+
+// AdvanceScene supports deterministic profiling at late animation phases.
+// It does not poll user input or open the audio device.
+func (g *Game) AdvanceScene(ticks int) error {
+	if g.scene == nil {
+		return nil
+	}
+	for i := 0; i < ticks; i++ {
+		if err := g.scene.Update(); err != nil {
+			return err
+		}
+	}
+	g.consumeAudioCue()
+	return nil
 }

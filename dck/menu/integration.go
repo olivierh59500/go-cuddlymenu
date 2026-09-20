@@ -6,6 +6,13 @@ func (g *Game) UseExternalAudio()                     { g.audioReady = true }
 func (g *Game) SetScreenHandler(handler func(string)) { g.screenHandler = handler }
 func (g *Game) IsLoading() bool                       { return g.loading.Active }
 
+func (g *Game) UseTouchControls() {
+	if !g.virtualControlsVisible() {
+		g.controlUI = newControlSprites()
+	}
+	g.touchControls = true
+}
+
 func (g *Game) Close() error {
 	if g.audioPlayer != nil {
 		g.audioPlayer.Close()

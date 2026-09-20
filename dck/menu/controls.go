@@ -19,6 +19,7 @@ type controlState struct {
 	Left  bool
 	Right bool
 	Fly   bool
+	Load  bool
 }
 
 type controlButton struct {
@@ -37,12 +38,14 @@ type controlLayout struct {
 	Left  controlButton
 	Right controlButton
 	Fly   controlButton
+	Load  controlButton
 }
 
 type controlSprites struct {
 	left  [2]*ebiten.Image
 	right [2]*ebiten.Image
 	fly   [2]*ebiten.Image
+	load  [2]*ebiten.Image
 }
 
 func newControlSprites() controlSprites {
@@ -59,7 +62,15 @@ func newControlSprites() controlSprites {
 			newControlSprite(flyButtonRadius, false, 0, true),
 			newControlSprite(flyButtonRadius, true, 0, true),
 		},
+		load: [2]*ebiten.Image{newLoadButton(false), newLoadButton(true)},
 	}
+}
+
+func newLoadButton(pressed bool) *ebiten.Image {
+	img := ebiten.NewImage(108, 108)
+	drawRoundButton(img, controlButton{X: 54, Y: 54, Radius: 50}, pressed)
+	ebitenutil.DebugPrintAt(img, "ENTER", 39, 48)
+	return img
 }
 
 func newControlSprite(radius float64, pressed bool, direction float32, fly bool) *ebiten.Image {
@@ -105,11 +116,12 @@ func makeControlLayout(width, height int) controlLayout {
 		Left:  controlButton{X: padX - 44, Y: y, Radius: padButtonRadius},
 		Right: controlButton{X: padX + 44, Y: y, Radius: padButtonRadius},
 		Fly:   controlButton{X: flyX, Y: y, Radius: flyButtonRadius},
+		Load:  controlButton{X: flyX, Y: y - 118, Radius: flyButtonRadius},
 	}
 }
 
 func (g *Game) readVirtualControls() (controlState, bool) {
-	if !virtualControlsEnabled() {
+	if !g.virtualControlsVisible() {
 		g.controls = controlState{}
 		return g.controls, false
 	}
@@ -142,10 +154,13 @@ func (s *controlState) press(layout controlLayout, x, y int) {
 	if layout.Fly.contains(x, y) {
 		s.Fly = true
 	}
+	if layout.Load.contains(x, y) {
+		s.Load = true
+	}
 }
 
 func (g *Game) virtualControlsVisible() bool {
-	return virtualControlsEnabled()
+	return g.touchControls || virtualControlsEnabled()
 }
 
 func virtualControlsEnabled() bool {
@@ -157,6 +172,7 @@ func (g *Game) drawVirtualControls(dst *ebiten.Image) {
 	drawControlSprite(dst, g.controlUI.left[boolIndex(g.controls.Left)], layout.Left)
 	drawControlSprite(dst, g.controlUI.right[boolIndex(g.controls.Right)], layout.Right)
 	drawControlSprite(dst, g.controlUI.fly[boolIndex(g.controls.Fly)], layout.Fly)
+	drawControlSprite(dst, g.controlUI.load[boolIndex(g.controls.Load)], layout.Load)
 }
 
 func boolIndex(value bool) int {

@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
+	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/olivierh59500/ym-player/pkg/stsound"
 	media "go-cuddlymenu/assets/cuddly"
 	"go-cuddlymenu/dck/screens"
@@ -100,6 +101,7 @@ func run() error {
 		return fmt.Errorf("SNDH leaked into native assets")
 	}
 	selections := screens.Catalog()
+	selections = append(selections, screens.Descriptor{ID: "loader", Directory: "menu/resources", Music: "loader.wav", Ready: true})
 	for i := 1; i <= 4; i++ {
 		d, _ := screens.Find("spreadpoint")
 		d.ID = fmt.Sprintf("spreadpoint-intro-%d", i)
@@ -137,7 +139,14 @@ func run() error {
 			}
 			p.Destroy()
 		} else {
-			decoded, err := mp3.DecodeWithSampleRate(48000, bytes.NewReader(b))
+			var decoded io.Reader
+			if path.Ext(name) == ".wav" {
+				decoded, err = wav.DecodeWithSampleRate(48000, bytes.NewReader(b))
+				m.Format = "WAV decoded to stereo PCM"
+			} else {
+				decoded, err = mp3.DecodeWithSampleRate(48000, bytes.NewReader(b))
+				m.Format = "MP3 decoded to stereo PCM"
+			}
 			if err != nil {
 				return err
 			}
@@ -151,7 +160,6 @@ func run() error {
 					m.NonzeroSamples++
 				}
 			}
-			m.Format = "MP3 decoded to stereo PCM"
 		}
 		if m.NonzeroSamples == 0 {
 			return fmt.Errorf("silent music: %s", name)

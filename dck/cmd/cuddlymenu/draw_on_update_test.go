@@ -101,3 +101,17 @@ func TestPALCadenceIsIndependentOfDisplayRefresh(t *testing.T) {
 		}
 	}
 }
+
+func TestRepeatedLayoutDoesNotForceRedraw(t *testing.T) {
+	inner := &fakeGame{}
+	game := newDrawOnUpdateGame(inner)
+	game.Layout(640, 480)
+	game.Draw(nil)
+	for i := 0; i < 144; i++ {
+		game.Layout(640, 480)
+		game.Draw(nil)
+	}
+	if inner.draws != 1 {
+		t.Fatalf("unchanged layout rebuilt %d frames", inner.draws)
+	}
+}

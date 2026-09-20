@@ -1,0 +1,100 @@
+{
+  "BIG_SPRITE": {
+    "Blipps": 162,
+    "Sector": 49,
+    "Text": "YOU'RE LOADING THE BIG SPRITE, SCHMUCK.  IT WAS CODED BY THE CAREBEARS, THE MUZEXX WAS DONE BY MAXIMUM MAD, GRAPHIX BY TCB, WITH SOME BY TANIS.    ",
+    "Title1": "  THE BIG",
+    "Title2": "   SPRITE DEMO"
+  },
+  "COLORSHOCK_II": {
+    "Blipps": 89,
+    "Sector": 45,
+    "Text": "COLORSHOCK II IS BEING LOADED..   CODING BY TCB. MUZEXX BY  MAAAH MAAAH OF TEX...    ",
+    "Title1": "    THE",
+    "Title2": "   COLORSHOCK2"
+  },
+  "DIGI_DEMO": {
+    "Blipps": 173,
+    "Sector": 118,
+    "Text": "WAIT WHILE LOADING THE DIGIDEMO, CODED BY THE CAREBEARS. THE GRAPHIXX WAS DONE BY TCB AND TEX. THE TUNE WAS COMPOSED BY KARSVALL...      ",
+    "Title1": "    THE",
+    "Title2": "    DIGI DEMO"
+  },
+  "DNA_DEMO": {
+    "Blipps": 200,
+    "Sector": 130,
+    "Text": "PUMP UP THE VOLUME AND GO GET SOME COKE, COZ YOU'RE ABOUT TO SEE THE DNA DEMO.  ",
+    "Title1": "    THE",
+    "Title2": "    DNA  DEMO"
+  },
+  "DOC": {
+    "Blipps": 99,
+    "Sector": 53,
+    "Text": "BELIEVE IT OR NOT, BUT HERE IS ANOTHER DOC DEMO. THIS IS THE FIRST ONE WITH 3D BALLS...   ",
+    "Title1": "THE  3D DOC",
+    "Title2": "      DEMO"
+  },
+  "FULLSCREEN": {
+    "Blipps": 221,
+    "Sector": 167,
+    "Text": "IT'S NOT QUITE AS FULL AS THE LEVEL 16 ONE, BUT IT'S MUCH MORE AMAZING. IT SHOULD BE IMPOSSIBLE TO MAKE, BUT OF COURSE WE MANAGE IT ANYWAY......        ",
+    "Title1": "THEFULLSCREEN",
+    "Title2": "      DEMO"
+  },
+  "KNUCKLE_BUSTER": {
+    "Blipps": 117,
+    "Sector": 67,
+    "Text": "A GUEST APPEARANCE!!!   THE EXCEPTIONS PRESENT THE KNUCKLEBUSTER. READ THE SCROLLER FOR MORE INFORMATION...     ",
+    "Title1": "    THE",
+    "Title2": "  KNUCKLEBUSTER"
+  },
+  "LED_SCROLLER": {
+    "Blipps": 32,
+    "Sector": 141,
+    "Text": "YOU WILL SOON SEE OUR (THE CAREBEARS'. MUSHROOMBRAIN) LED SCROLLER DEMO...      ",
+    "Title1": "    THE",
+    "Title2": "  LED  SCROLLER"
+  },
+  "MEGA_SCROLLER": {
+    "Blipps": 172,
+    "Sector": 131,
+    "Text": "DUM DURUDUMDUM DE DUUMMMM...  THE CAREBEARS PRESENT THE MEGASCROLLER...   YES, OF COURSE IT WAS CODED BY THE CAREBEARS.  THE SMALL BLUE SQUARE WERE DONE BY TANIS.   ",
+    "Title1": "    THE",
+    "Title2": "  MEGA SCROLLER"
+  },
+  "MENU": {
+    "Blipps": 149,
+    "Sector": 110,
+    "Text": "\tYOU'RE LOADING THE CUDDLY MAIN MENU, CODED BY THE CAREBEARS. MUZEXX BY MAD, THE MAX. MOST GRAPHIXX BY TCB, BUT SOME BY TANIS AND ES OF TEX.     \t",
+    "Title1": "    THE",
+    "Title2": "    MAIN MENU"
+  },
+  "NO_NAME_1": {
+    "Blipps": 117,
+    "Sector": 81,
+    "Text": "WAIT WHILE LOADING...  EHHH...  WELL... WE DON'T KNOW WHAT TO NAME IT. SEND SUGGESTIONS TO US...   ",
+    "Title1": "THE EHHH!!!!",
+    "Title2": "      DEMO"
+  },
+  "NO_NAME_2": {
+    "Blipps": 109,
+    "Sector": 40,
+    "Text": "HERE COMES THE MEGABALL DEMO.  WAIT, AND DISCOVER THAT IT'S ANOTHER DOC LOOKALIKE DEMO...      ",
+    "Title1": "THE MEGABALL",
+    "Title2": "      DEMO"
+  },
+  "SPREADPOINT": {
+    "Blipps": 123,
+    "Sector": 74,
+    "Text": "PREPARE FOR THE ULTIMATE BRAIN BLASTER. THE CAREBEARS PRESENTS THE SPREADPOINT DEMO...      ",
+    "Title1": "SPREADPOINT",
+    "Title2": "      DEMO"
+  },
+  "STARWARS_DEMO": {
+    "Blipps": 219,
+    "Sector": 108,
+    "Text": "THE STARWARSDEMO WAS CODED BY THE CAREBEARS THE FONT WAS DONE BY THE KNIGHTHAWKS (AMIGA), UGLY FONT BY TCB AND SPRITES BY TANIS...       ",
+    "Title1": "    THE",
+    "Title2": "  STARWARS DEMO"
+  }
+}

@@ -98,11 +98,12 @@ type Game struct {
 	crtShader *ebiten.Shader
 	useCRT    bool
 
-	layoutWidth int
-	touchIDs    []ebiten.TouchID
-	pressedKeys []ebiten.Key
-	controls    controlState
-	controlUI   controlSprites
+	layoutWidth   int
+	touchIDs      []ebiten.TouchID
+	pressedKeys   []ebiten.Key
+	controls      controlState
+	controlUI     controlSprites
+	touchControls bool
 }
 
 var bouncingAnimation = []int{0, 3, 5, 6, 5, 3, 0, 1, 2, 3, 2, 1, 0}
@@ -293,7 +294,7 @@ func (g *Game) readInput() (left, right, thrust, load, anyInput bool) {
 	left = ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyZ) || controls.Left
 	right = ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyX) || controls.Right
 	thrust = ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyEnter) || controls.Fly
-	load = ebiten.IsKeyPressed(ebiten.KeySpace)
+	load = ebiten.IsKeyPressed(ebiten.KeySpace) || controls.Load
 	g.pressedKeys = inpututil.AppendPressedKeys(g.pressedKeys[:0])
 	anyInput = len(g.pressedKeys) > 0 || pointerActive
 	return
@@ -507,6 +508,14 @@ func (g *Game) handleLoad(load bool) {
 }
 
 func (g *Game) startLoading(name string) {
+	if g.screenHandler != nil {
+		g.autoPilot.NowLoadScreen = false
+		g.autoPilot.WaitToLoad = 80
+		g.advanceAutoPilot()
+		// The complete application owns the original image/countdown transition.
+		g.screenHandler(name)
+		return
+	}
 	g.requestedScreen = name
 	g.loading = LoaderState{
 		Active: true,

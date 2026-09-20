@@ -60,3 +60,12 @@ func TestVirtualControlsAreDisabledOnDesktop(t *testing.T) {
 		t.Fatal("virtual controls must stay disabled on desktop")
 	}
 }
+
+func TestEnterButtonIsIndependentOfFlight(t *testing.T) {
+	layout := makeControlLayout(1212, screenHeight)
+	state := controlState{}
+	state.press(layout, int(layout.Load.X), int(layout.Load.Y))
+	if !state.Load || state.Fly || state.Left || state.Right {
+		t.Fatalf("incorrect enter input: %+v", state)
+	}
+}
