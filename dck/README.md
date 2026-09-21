@@ -30,9 +30,14 @@ F1 opens the selector; arrows and Enter select a screen. Esc or Space returns to
 the menu, and R opens Reset from an active screen. In Megaball, Up/Down selects one
 of the nine parameters and Left/Right changes it. `-mute` disables device audio.
 
-Playback uses **50 logical updates per second**, independently of display refresh.
+Playback defaults to **60 logical updates per second**, independently of display refresh.
 Drawing never advances the animation. YM and recorded audio keep their normal
-sample clock; the speed of the original implementation in a modern browser is not reproduced.
+sample clock. NATIVE uses a nominal 60-step timebase; display-driven acceleration
+on 120/144 Hz monitors is not reproduced.
+
+Use `-hz 50` to compare the earlier cadence, or press **F3** to switch between
+50 and 60 Hz without restarting the scene/music. On mobile, tap the **60 HZ / 50 HZ**
+button in the left margin. A fresh app session starts at 60 Hz.
 
 The source audit and porting guide documents each screen,
 shared effects, music, timing and the 94 visual checkpoints. Runtime code is

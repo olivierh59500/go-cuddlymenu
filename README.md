@@ -47,9 +47,9 @@ The separate Android target is built and installed with
 see the Android guide.
 
 The DCK version connects the menu to all thirteen main Cuddly screens, plus
-Introduction and Reset. NATIVE Credits is excluded. Playback runs at a fixed PAL
-cadence of 50 updates per second, independent of monitor refresh, with normal
-music playback speed. F1 opens the selector; Esc or Space returns from a screen;
+Introduction and Reset. NATIVE Credits is excluded. Playback runs at a fixed
+cadence of 60 updates per second by default, independent of monitor refresh, with
+normal music playback speed. Use `-hz 50`, F3 or the mobile rate button to compare. F1 opens the selector; Esc or Space returns from a screen;
 R opens Reset. `-list` lists the ports and `-screen dna` launches one directly.
 
 The Cuddly porting guide covers effect reuse, controls,
