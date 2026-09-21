@@ -1,10 +1,9 @@
-// Package cuddly exposes the archived Cuddly artwork, sound and source data.
+// Package cuddly embeds the native demo artwork, fonts, music and scene data.
 package cuddly
 
 import "embed"
 
-// Files contains original assets. The the original implementation reference is archived separately
-// and is never needed or executed by the native Go application.
+// Files supplies self-contained assets for desktop and mobile playback.
 //
 //go:embed 3d_doc big_sprite colorshock2 digi dna_demo ehh fullscreen intro led_scroller megaball megascroller menu reset spreadpoint starwars tex data.json loader.json ym/*.ym
 var Files embed.FS

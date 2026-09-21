@@ -145,5 +145,5 @@ func (s *Scene) spreadpoint() {
 		iteration++
 	}
 }
-func number(v float64) *float64 { return &v }
+func number(v float64) *float64     { return &v }
 func roundHalfUp(v float64) float64 { return math.Floor(v + .5) }

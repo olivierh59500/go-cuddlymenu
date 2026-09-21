@@ -100,7 +100,7 @@ func (s *Scene) bigSprite() {
 	for _, name := range []string{"s", "r", "a", "e", "b", "e", "r", "a", "c", "e", "h", "t"} {
 		letters = append(letters, s.asset(name+".png"))
 	}
-	// NATIVE's scroller initializer leaves the source's global i at nine.
+	// Start the movement cycle at the authored nine-step phase offset.
 	phase, flip, flipStep, upd, rasterY := 9.0, 1.0, -.02, 0.0, 0.0
 	s.render = func() {
 		clearBlack(s.Canvas)

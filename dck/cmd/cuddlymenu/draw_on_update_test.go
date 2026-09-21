@@ -78,7 +78,7 @@ func TestDrawOnUpdateGameDoesNotRedrawAfterFailedUpdate(t *testing.T) {
 	}
 }
 
-func TestNATIVECadenceIsIndependentOfDisplayRefresh(t *testing.T) {
+func TestFixedCadenceIsIndependentOfDisplayRefresh(t *testing.T) {
 	previous := ebiten.TPS()
 	defer ebiten.SetTPS(previous)
 	configureTiming()

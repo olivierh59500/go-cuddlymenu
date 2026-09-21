@@ -4,7 +4,7 @@ import "testing"
 
 func TestCreditsExcludedAndEveryRemainingScreenConstructs(t *testing.T) {
 	if _, ok := Find("credits"); ok {
-		t.Fatal("NATIVE Credits must stay outside the native scope")
+		t.Fatal("Unsupported credits screen must stay outside the native scope")
 	}
 	if DoorID("CREDITS") != "" {
 		t.Fatal("excluded credits door still dispatches")

@@ -1,4 +1,4 @@
-// Command checkcuddly verifies the archive and decodes every active music asset.
+// Command checkcuddly validates embedded images and decodes every active music asset.
 package main
 
 import (
@@ -15,7 +15,6 @@ import (
 	"io/fs"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
@@ -35,7 +34,7 @@ type music struct {
 	NonzeroSamples                      int
 }
 type report struct {
-	ArchiveFiles  int
+	AssetFiles    int
 	Images        []asset
 	Music         []music
 	NativeHasSNDH bool
@@ -48,43 +47,31 @@ func main() {
 	}
 }
 func run() error {
-	b, err := os.ReadFile("reference/cuddly/manifest.json")
-	if err != nil {
-		return err
-	}
-	var manifest struct {
-		Files []struct {
-			Path, SHA256, Error string
-			Bytes               int
-		}
-	}
-	if err = json.Unmarshal(b, &manifest); err != nil {
-		return err
-	}
-	r := report{ArchiveFiles: len(manifest.Files)}
-	for _, f := range manifest.Files {
-		if f.Error != "" {
-			return fmt.Errorf("missing archive file %s", f.Path)
-		}
-		if !filepath.IsLocal(f.Path) {
-			return fmt.Errorf("invalid archive path")
-		}
-		b, err := os.ReadFile(f.Path)
+	r := report{}
+	err := fs.WalkDir(media.Files, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		sum := sha256.Sum256(b)
-		if hex.EncodeToString(sum[:]) != f.SHA256 || len(b) != f.Bytes {
-			return fmt.Errorf("archive integrity failure: %s", f.Path)
+		if d.IsDir() {
+			return nil
 		}
-		switch strings.ToLower(filepath.Ext(f.Path)) {
+		r.AssetFiles++
+		switch strings.ToLower(path.Ext(p)) {
 		case ".png", ".jpg", ".jpeg", ".gif":
+			b, err := media.Files.ReadFile(p)
+			if err != nil {
+				return err
+			}
 			cfg, _, err := image.DecodeConfig(bytes.NewReader(b))
 			if err != nil {
-				return fmt.Errorf("%s: %w", f.Path, err)
+				return fmt.Errorf("%s: %w", p, err)
 			}
-			r.Images = append(r.Images, asset{f.Path, cfg.Width, cfg.Height})
+			r.Images = append(r.Images, asset{p, cfg.Width, cfg.Height})
 		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	if err = fs.WalkDir(media.Files, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -112,7 +99,7 @@ func run() error {
 		if !d.Ready {
 			continue
 		}
-		name := "" + d.Directory + "/" + d.Music
+		name := d.Directory + "/" + d.Music
 		if strings.HasPrefix(d.Music, "@") {
 			name = d.Music[1:]
 		}
@@ -166,13 +153,16 @@ func run() error {
 		}
 		r.Music = append(r.Music, m)
 	}
-	b, err = json.MarshalIndent(r, "", "  ")
+	b, err := json.MarshalIndent(r, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile("docs/cuddly-assets.json", append(b, '\n'), 0644); err != nil {
+	if err = os.MkdirAll("captures", 0755); err != nil {
 		return err
 	}
-	fmt.Printf("Verified %d archived files, %d images and %d native music selections; no SNDH in native assets.\n", r.ArchiveFiles, len(r.Images), len(r.Music))
+	if err = os.WriteFile("captures/assets.json", append(b, '\n'), 0644); err != nil {
+		return err
+	}
+	fmt.Printf("Verified %d embedded files, %d images and %d native music selections; no SNDH in native assets.\n", r.AssetFiles, len(r.Images), len(r.Music))
 	return nil
 }

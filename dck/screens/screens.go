@@ -1,4 +1,4 @@
-// Package screens reconstructs the Cuddly NATIVE screens with native DCK effects.
+// Package screens composes the Cuddly demos from native DCK effects.
 package screens
 
 import (
@@ -17,31 +17,31 @@ import (
 )
 
 type Descriptor struct {
-	ID, Title, Directory, Page, Music string
-	Width, Height                     int
-	Ready                             bool
+	ID, Title, Directory, Music string
+	Width, Height               int
+	Ready                       bool
 }
 
-// TicksPerSecond is NATIVE's nominal cadence, independent of monitor refresh.
+// TicksPerSecond is the default animation cadence, independent of monitor refresh.
 // Source frame counters retain their original ordering at either supported rate.
 const TicksPerSecond = timing.DefaultRate
 
 var catalog = []Descriptor{
-	{"big-sprite", "The Big Sprite Demo", "big_sprite", "big-sprite", "cuddly_bigsprite.ym", 768, 540, true},
-	{"colorshock", "Colorshock II", "colorshock2", "colorshock", "Colorshock.ym", 768, 540, true},
-	{"ehh", "Ehhh!!!! / No Name 1", "ehh", "ehh", "@ym/ehh.ym", 768, 540, true},
-	{"megascroller", "The Mega Scroller", "megascroller", "megascroller", "@ym/megascroller.ym", 768, 540, true},
-	{"spreadpoint", "Spreadpoint", "spreadpoint", "spreadpoint", "master.mp3", 832, 552, true},
-	{"digi", "Digi Sound", "digi", "digi", "tcbdigi.mp3", 768, 540, true},
-	{"led", "The LED Scroller", "led_scroller", "led", "@ym/led.ym", 768, 540, true},
-	{"3d-doc", "The 3D DOC", "3d_doc", "3d-doc", "Cuddly - 3D doc.ym", 768, 540, true},
-	{"fullscreen", "The Fullscreen Demo", "fullscreen", "fullscreen", "@ym/fullscreen.ym", 768, 536, true},
-	{"starwars", "The Starwars Demo", "starwars", "starwars", "Cuddly - Star-Wars.ym", 768, 540, true},
-	{"knucklebuster", "Knucklebuster", "tex", "knucklebuster", "@ym/knucklebusters.ym", 768, 540, true},
-	{"dna", "The DNA Demo", "dna_demo", "dna", "bankok-knights-1.ym", 832, 552, true},
-	{"megaball", "The Megaball Demo / No Name 2", "megaball", "megaball", "Cuddly - Megaballs.ym", 768, 540, true},
-	{"intro", "Introduction", "intro", "intro", "cuddlyintro.mp3", 768, 540, true},
-	{"reset", "Reset Screen", "reset", "reset", "cuddlyreset.ym", 768, 540, true},
+	{"big-sprite", "The Big Sprite Demo", "big_sprite", "cuddly_bigsprite.ym", 768, 540, true},
+	{"colorshock", "Colorshock II", "colorshock2", "Colorshock.ym", 768, 540, true},
+	{"ehh", "Ehhh!!!! / No Name 1", "ehh", "@ym/ehh.ym", 768, 540, true},
+	{"megascroller", "The Mega Scroller", "megascroller", "@ym/megascroller.ym", 768, 540, true},
+	{"spreadpoint", "Spreadpoint", "spreadpoint", "master.mp3", 832, 552, true},
+	{"digi", "Digi Sound", "digi", "tcbdigi.mp3", 768, 540, true},
+	{"led", "The LED Scroller", "led_scroller", "@ym/led.ym", 768, 540, true},
+	{"3d-doc", "The 3D DOC", "3d_doc", "Cuddly - 3D doc.ym", 768, 540, true},
+	{"fullscreen", "The Fullscreen Demo", "fullscreen", "@ym/fullscreen.ym", 768, 536, true},
+	{"starwars", "The Starwars Demo", "starwars", "Cuddly - Star-Wars.ym", 768, 540, true},
+	{"knucklebuster", "Knucklebuster", "tex", "@ym/knucklebusters.ym", 768, 540, true},
+	{"dna", "The DNA Demo", "dna_demo", "bankok-knights-1.ym", 832, 552, true},
+	{"megaball", "The Megaball Demo / No Name 2", "megaball", "Cuddly - Megaballs.ym", 768, 540, true},
+	{"intro", "Introduction", "intro", "cuddlyintro.mp3", 768, 540, true},
+	{"reset", "Reset Screen", "reset", "cuddlyreset.ym", 768, 540, true},
 }
 
 func Catalog() []Descriptor { return append([]Descriptor(nil), catalog...) }
@@ -61,7 +61,7 @@ func DoorName(id string) string {
 	if id == "menu" {
 		return "MENU"
 	}
-	for _, name := range []string{"BIG_SPRITE", "COLORSHOCK_II", "NO_NAME_1", "MEGA_SCROLLER", "SPREADPOINT", "DIGI_DEMO", "LED_SCROLLER", "DOC", "FULLSCREEN", "STARWARS_DEMO", "KNUCKLE_BUSTER", "DNA_DEMO", "NO_NAME_2"} {
+	for _, name := range []string{"BIG_SPRITE", "COLORSHOCK_II", "NO_NAME_1", "SPREADPOINT", "DIGI_DEMO", "LED_SCROLLER", "DOC", "FULLSCREEN", "STARWARS_DEMO", "KNUCKLE_BUSTER", "DNA_DEMO", "NO_NAME_2"} {
 		if DoorID(name) == id {
 			return name
 		}
@@ -106,8 +106,7 @@ func New(id string) (*Scene, error) {
 		return nil, fmt.Errorf("%s is not available yet", d.Title)
 	}
 	s := &Scene{Descriptor: d, store: assets.New(media.Files), filters: map[*ebiten.Image]ebiten.Filter{}, random: 42}
-	// The reference consumes one random value for the initial random sequence offset
-	// before initializing either stars or the drummer's trigger sequence.
+	// Keep the seeded starfield and drummer trigger sequences stable.
 	s.rnd()
 	bytes, err := media.Files.ReadFile("data.json")
 	if err != nil {
@@ -117,7 +116,7 @@ func New(id string) (*Scene, error) {
 	if err = json.Unmarshal(bytes, &all); err != nil {
 		return nil, err
 	}
-	s.data = all[d.Page]
+	s.data = all[d.ID]
 	s.Canvas = s.surface(d.Width, d.Height)
 	s.music(d.Music, true)
 	switch id {
@@ -160,7 +159,7 @@ func New(id string) (*Scene, error) {
 		s.Close()
 		return nil, fmt.Errorf("missing screen renderer %q", id)
 	}
-	s.render() // NATIVE init() draws the first frame before scheduling the next one.
+	s.render() // Prepare the initial frame before the first update.
 	return s, nil
 }
 
@@ -194,7 +193,7 @@ func (s *Scene) Input(in Input) {
 func (s *Scene) music(file string, loop bool) { s.audioCue = &AudioCue{File: file, Loop: loop} }
 func (s *Scene) TakeAudioCue() *AudioCue      { cue := s.audioCue; s.audioCue = nil; return cue }
 func (s *Scene) asset(name string) *ebiten.Image {
-	img, err := s.store.Texture("" + s.Descriptor.Directory + "/" + name)
+	img, err := s.store.Texture(s.Descriptor.Directory + "/" + name)
 	if err != nil {
 		s.err = err
 		return s.surface(1, 1)

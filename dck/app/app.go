@@ -126,7 +126,7 @@ func (g *Game) consumeAudioCue() {
 	}
 	track := ""
 	if cue.File != "" {
-		track = "" + g.scene.Descriptor.Directory + "/" + cue.File
+		track = g.scene.Descriptor.Directory + "/" + cue.File
 		if strings.HasPrefix(cue.File, "@") {
 			track = cue.File[1:]
 		}

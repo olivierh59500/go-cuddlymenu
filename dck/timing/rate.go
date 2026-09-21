@@ -3,7 +3,7 @@ package timing
 
 import "fmt"
 
-// DefaultRate matches NATIVE's 60-step pauses and nominal animation timebase.
+// DefaultRate is the nominal 60-step animation timebase.
 // It is independent of the display refresh rate and the audio sample clock.
 const DefaultRate = 60
 

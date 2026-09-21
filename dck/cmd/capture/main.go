@@ -31,7 +31,7 @@ func main() {
 		frames = append(frames, n)
 	}
 	if *loading != "" {
-		err := capture.Run(capture.Config{Directory: filepath.Join(*out, "cuddly_loader_"+*loading), Frames: frames, Width: loader.Width, Height: loader.Height}, func() (ebiten.Game, error) { return loader.New(*loading) })
+		err := capture.Run(capture.Config{Directory: filepath.Join(*out, "loader-"+*loading), Frames: frames, Width: loader.Width, Height: loader.Height}, func() (ebiten.Game, error) { return loader.New(*loading) })
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -43,7 +43,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "screen not available:", *id)
 		os.Exit(1)
 	}
-	err := capture.Run(capture.Config{Directory: filepath.Join(*out, d.Page), Frames: frames, Width: d.Width, Height: d.Height}, func() (ebiten.Game, error) { return screens.New(*id) })
+	err := capture.Run(capture.Config{Directory: filepath.Join(*out, d.ID), Frames: frames, Width: d.Width, Height: d.Height}, func() (ebiten.Game, error) { return screens.New(*id) })
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
