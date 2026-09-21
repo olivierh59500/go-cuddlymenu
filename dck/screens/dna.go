@@ -6,9 +6,9 @@ import (
 	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/geometry"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) dna() {
@@ -31,6 +31,15 @@ func (s *Scene) dna() {
 	}
 	type dot struct{ x, y, z, r float64 }
 	dots := make([]dot, len(points))
+	discs, err := sprites.NewDiscs(len(points))
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, discs.Close)
+	particles := make([]sprites.Disc, len(points))
+	var tint ebiten.ColorScale
+	tint.ScaleWithColor(color.RGBA{238, 136, 0, 255})
 	rotation := 0.0
 	iteration, curve := 0, 0
 	inIntro := true
@@ -116,9 +125,10 @@ func (s *Scene) dna() {
 			dots[i] = dot{x: 208 + x*scale, y: 138 - (p.Y+16)*scale, z: z, r: scale}
 		}
 		sort.SliceStable(dots, func(i, j int) bool { return dots[i].z < dots[j].z })
-		for _, p := range dots {
-			vector.DrawFilledCircle(main, float32(p.x), float32(p.y), float32(p.r), color.RGBA{238, 136, 0, 255}, true)
+		for i, p := range dots {
+			particles[i] = sprites.Disc{X: p.x, Y: p.y, Radius: p.r, ColorScale: tint}
 		}
+		discs.DrawAt(main, particles, 0, 0)
 		t := float64(iteration)
 		for _, x := range []float64{60, 268} {
 			decal := 0.0

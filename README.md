@@ -37,7 +37,14 @@ La migration du synthétiseur, la suppression des allocations dans le flux PCM e
 
 The original implementation remains at its original paths. Run it with `go run ./cmd/cuddlymenu`.
 
-The construction-kit version is in [dck/](dck/README.md). Run `go run ./dck/cmd/cuddlymenu` from this directory. Both versions share the original assets.
+The construction-kit version is in [dck/](dck/README.md). Run
+`go run ./dck/cmd/cuddlydemo` for the complete introduction and menu, or
+`go run ./dck/cmd/cuddlymenu` to start directly in the menu. Both DCK entry points
+use the original image/countdown loading transition. Original assets are shared.
+
+The separate Android target is built and installed with
+`./scripts/run-cuddlydemo-android.sh`. Its launcher name is **Cuddly Demo (DCK)**;
+see the Android guide.
 
 The DCK version connects the menu to all thirteen main Cuddly screens, plus
 Introduction and Reset. NATIVE Credits is excluded. Playback runs at a fixed PAL

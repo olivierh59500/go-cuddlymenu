@@ -337,18 +337,3 @@ func (g *Game) CurrentScreen() string {
 	}
 	return "menu"
 }
-
-// AdvanceScene supports deterministic profiling at late animation phases.
-// It does not poll user input or open the audio device.
-func (g *Game) AdvanceScene(ticks int) error {
-	if g.scene == nil {
-		return nil
-	}
-	for i := 0; i < ticks; i++ {
-		if err := g.scene.Update(); err != nil {
-			return err
-		}
-	}
-	g.consumeAudioCue()
-	return nil
-}
