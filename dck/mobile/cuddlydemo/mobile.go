@@ -20,3 +20,8 @@ func init() {
 func Configure(screen string, metrics bool, startFrame int) {
 	host.Configure(screen, metrics, startFrame)
 }
+
+// ConfigureAtRate selects the optional comparison rate before the first frame.
+func ConfigureAtRate(screen string, metrics bool, startFrame, rate int) {
+	host.ConfigureAtRate(screen, metrics, startFrame, rate)
+}

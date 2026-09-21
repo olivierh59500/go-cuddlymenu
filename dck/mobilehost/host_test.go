@@ -44,3 +44,16 @@ func TestConfigurationDefersConstructionAndKeepsLatestRequest(t *testing.T) {
 		t.Fatal("configuration created the game on the caller thread or lost the latest request")
 	}
 }
+
+func TestMobileComparisonRateReachesLaunchRequest(t *testing.T) {
+	h := New("intro")
+	h.ConfigureAtRate("", true, 120, 50)
+	r := <-h.requests
+	if r.screen != "intro" || r.rate != 50 || r.warmup != 120 {
+		t.Fatal("mobile rate override was lost")
+	}
+	h.Configure("intro", false, 0)
+	if r = <-h.requests; r.rate != 0 {
+		t.Fatal("normal launch did not select the default rate")
+	}
+}

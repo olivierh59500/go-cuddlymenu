@@ -123,7 +123,7 @@ func (s *Scene) doc() {
 		vbl2 += .8
 		s.transform(s.Canvas, stage, 0, -128, 2, 2.6, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		// Preserve the reference's mixed seconds/frame arithmetic. Playback of
-		// these logical ticks is separately fixed at the application's PAL rate.
+		// these logical ticks uses the application's selected fixed rate.
 		t := float64(mainTick) / 60
 		segment := int(math.Floor(math.Mod(t/7, 7)))
 		alpha := math.Min(1, math.Mod(t/7, 1)*7*1.3)

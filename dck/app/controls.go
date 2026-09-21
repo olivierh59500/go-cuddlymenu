@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"runtime"
@@ -13,8 +14,8 @@ import (
 )
 
 type controls struct {
-	back, reset, chooser, confirm, left, right, up, down bool
-	chosen                                               int
+	back, reset, chooser, confirm, left, right, up, down, rate bool
+	chosen                                                     int
 }
 type button struct {
 	label, action string
@@ -42,6 +43,7 @@ func (g *Game) buttons() []button {
 		return button{label, action, image.Rect(cx-52, cy-27, cx+52, cy+27)}
 	}
 	b := []button{makeButton("SCREENS", "chooser", x, 50), makeButton("RESET", "reset", x, 124)}
+	b = append(b, makeButton(fmt.Sprintf("%d HZ", g.TickRate()), "rate", x, 198))
 	if g.scene != nil || g.transition != nil || g.chooser {
 		b = append(b, makeButton("MENU", "back", x, h-70))
 	}
@@ -54,6 +56,7 @@ func (g *Game) buttons() []button {
 }
 func (g *Game) readControls() controls {
 	in := controls{chosen: -1, chooser: inpututil.IsKeyJustPressed(ebiten.KeyF1), back: inpututil.IsKeyJustPressed(ebiten.KeyEscape) || (g.scene != nil && inpututil.IsKeyJustPressed(ebiten.KeySpace)), reset: inpututil.IsKeyJustPressed(ebiten.KeyR), confirm: inpututil.IsKeyJustPressed(ebiten.KeyEnter), left: inpututil.IsKeyJustPressed(ebiten.KeyArrowLeft), right: inpututil.IsKeyJustPressed(ebiten.KeyArrowRight), up: inpututil.IsKeyJustPressed(ebiten.KeyArrowUp), down: inpututil.IsKeyJustPressed(ebiten.KeyArrowDown)}
+	in.rate = inpututil.IsKeyJustPressed(ebiten.KeyF3)
 	if !g.touchEnabled() {
 		return in
 	}
@@ -61,6 +64,8 @@ func (g *Game) readControls() controls {
 		for _, b := range g.buttons() {
 			if image.Pt(x, y).In(b.rect) {
 				switch b.action {
+				case "rate":
+					in.rate = true
 				case "back":
 					in.back = true
 				case "reset":

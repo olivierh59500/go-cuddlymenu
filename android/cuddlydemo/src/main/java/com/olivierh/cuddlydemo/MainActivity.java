@@ -23,9 +23,10 @@ public final class MainActivity extends Activity {
         Seq.setContext(getApplicationContext());
         // Optional developer arguments allow profiling late effects on the device.
         String screen = getIntent().getStringExtra("screen");
-        Mobile.configure(screen == null ? "intro" : screen,
+        Mobile.configureAtRate(screen == null ? "intro" : screen,
                 getIntent().getBooleanExtra("metrics", false),
-                getIntent().getIntExtra("startFrame", 0));
+                getIntent().getIntExtra("startFrame", 0),
+                getIntent().getIntExtra("hz", 0));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams attributes = getWindow().getAttributes();

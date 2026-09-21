@@ -19,12 +19,14 @@ import (
 	"go-cuddlymenu/dck/loader"
 	"go-cuddlymenu/dck/menu"
 	"go-cuddlymenu/dck/screens"
+	"go-cuddlymenu/dck/timing"
 )
 
 type Config struct {
 	Screen        string
 	Muted         bool
 	TouchControls bool
+	TickRate      int // Zero selects the default; 50 remains available for comparison.
 }
 type Game struct {
 	menu                      *menu.Game
@@ -46,6 +48,11 @@ type Game struct {
 }
 
 func New(c Config) (*Game, error) {
+	var err error
+	c.TickRate, err = timing.Normalize(c.TickRate)
+	if err != nil {
+		return nil, err
+	}
 	g := &Game{config: c, track: "menu/resources/menu.ym", loopMusic: true}
 	g.menu = menu.NewGame()
 	g.menu.UseExternalAudio()
@@ -68,7 +75,7 @@ func (g *Game) Begin(id string) error {
 	if name == "" {
 		return g.open(id)
 	}
-	next, err := loader.New(name)
+	next, err := loader.NewAtRate(name, g.TickRate())
 	if err != nil {
 		return err
 	}
@@ -187,6 +194,15 @@ func (g *Game) Update() error {
 		g.noticeTicks--
 	}
 	in := g.readControls()
+	if in.rate {
+		next := 60
+		if g.TickRate() == 60 {
+			next = 50
+		}
+		if err := g.SetTickRate(next); err != nil {
+			return err
+		}
+	}
 	if in.chooser && g.transition == nil {
 		g.chooser = !g.chooser
 	}
@@ -236,7 +252,7 @@ func (g *Game) Update() error {
 		if in.confirm {
 			if err := g.Begin(list[g.selection].ID); err != nil {
 				g.notice = err.Error()
-				g.noticeTicks = 150
+				g.noticeTicks = 3 * g.TickRate()
 			} else {
 				g.chooser = false
 			}
@@ -336,4 +352,28 @@ func (g *Game) CurrentScreen() string {
 		return g.scene.Descriptor.ID
 	}
 	return "menu"
+}
+
+func (g *Game) TickRate() int {
+	if g.config.TickRate == 0 {
+		return timing.DefaultRate
+	}
+	return g.config.TickRate
+}
+
+// SetTickRate changes animation cadence without restarting the scene or music.
+// Call on the game goroutine; an active loader keeps its elapsed real-time delays.
+func (g *Game) SetTickRate(rate int) error {
+	rate, err := timing.Normalize(rate)
+	if err != nil {
+		return err
+	}
+	if g.transition != nil {
+		if err = g.transition.SetTickRate(rate); err != nil {
+			return err
+		}
+	}
+	g.config.TickRate = rate
+	ebiten.SetTPS(rate)
+	return nil
 }

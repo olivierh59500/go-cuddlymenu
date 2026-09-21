@@ -16,6 +16,7 @@ func Run(first string) {
 	muted := flag.Bool("mute", false, "disable device audio")
 	touch := flag.Bool("touch", false, "show touch controls on desktop")
 	list := flag.Bool("list", false, "list native screens")
+	rate := flag.Int("hz", screens.TicksPerSecond, "fixed animation rate: 60 (default) or 50")
 	flag.Parse()
 	if *list {
 		for _, d := range screens.Catalog() {
@@ -26,13 +27,15 @@ func Run(first string) {
 	ebiten.SetWindowSize(768, 540)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Cuddly Demo / DCK - Space: menu, F1: screens")
-	ConfigureTiming()
 	ebiten.SetScreenClearedEveryFrame(false)
-	g, err := app.New(app.Config{Screen: *id, Muted: *muted, TouchControls: *touch})
+	g, err := app.New(app.Config{Screen: *id, Muted: *muted, TouchControls: *touch, TickRate: *rate})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer g.Close()
+	if err = g.SetTickRate(*rate); err != nil {
+		log.Fatal(err)
+	}
 	if err = ebiten.RunGame(app.CacheDraws(g)); err != nil {
 		log.Fatal(err)
 	}

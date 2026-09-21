@@ -13,6 +13,7 @@ import (
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	media "go-cuddlymenu/assets/cuddly"
+	"go-cuddlymenu/dck/timing"
 )
 
 type Descriptor struct {
@@ -21,9 +22,9 @@ type Descriptor struct {
 	Ready                             bool
 }
 
-// TicksPerSecond is the PAL playback cadence, independent of monitor refresh.
-// Source frame counters retain their original ordering at this fixed rate.
-const TicksPerSecond = 50
+// TicksPerSecond is NATIVE's nominal cadence, independent of monitor refresh.
+// Source frame counters retain their original ordering at either supported rate.
+const TicksPerSecond = timing.DefaultRate
 
 var catalog = []Descriptor{
 	{"big-sprite", "The Big Sprite Demo", "big_sprite", "big-sprite", "cuddly_bigsprite.ym", 768, 540, true},

@@ -10,27 +10,38 @@ import (
 	"github.com/olivierh59500/democonstructionkit/assets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	media "go-cuddlymenu/assets/cuddly"
+	"go-cuddlymenu/dck/timing"
 )
 
 const Music = "menu/resources/loader.wav"
 const Width, Height = 768, 536
-const BlackTicks = 13 // The original 250 ms pause, rounded up at PAL 50 Hz.
+const blackSeconds, fadeSeconds = .25, 1.5
 
 type Spec struct {
 	Sector, Blipps       int
 	Title1, Title2, Text string
 }
 type Screen struct {
-	Canvas           *ebiten.Image
-	spec             Spec
-	tick             int
-	store            *assets.Store
-	background, text *ebiten.Image
-	font             scrolling.BitmapGrid
-	scroll           *scrolling.Ring
+	Canvas                    *ebiten.Image
+	spec                      Spec
+	tick                      int
+	rate                      int
+	blackElapsed, fadeElapsed float64
+	store                     *assets.Store
+	background, text          *ebiten.Image
+	font                      scrolling.BitmapGrid
+	scroll                    *scrolling.Ring
 }
 
 func New(name string) (*Screen, error) {
+	return NewAtRate(name, timing.DefaultRate)
+}
+
+func NewAtRate(name string, rate int) (*Screen, error) {
+	rate, err := timing.Normalize(rate)
+	if err != nil {
+		return nil, err
+	}
 	b, err := media.Files.ReadFile("loader.json")
 	if err != nil {
 		return nil, err
@@ -43,7 +54,7 @@ func New(name string) (*Screen, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown loading screen %q", name)
 	}
-	l := &Screen{spec: spec, store: assets.New(media.Files), Canvas: ebiten.NewImage(Width, Height), text: ebiten.NewImage(640, 16)}
+	l := &Screen{spec: spec, rate: rate, store: assets.New(media.Files), Canvas: ebiten.NewImage(Width, Height), text: ebiten.NewImage(640, 16)}
 	load := func(name string) *ebiten.Image {
 		img, e := l.store.Texture("menu/resources/" + name)
 		if e != nil {
@@ -75,13 +86,31 @@ func (l *Screen) Counters() (sector, blipps int) {
 	return max(0, l.spec.Sector-l.tick), l.spec.Blipps - max(0, l.tick-l.spec.Sector+1)
 }
 func (l *Screen) Blank() bool { return l.tick >= l.spec.Sector+l.spec.Blipps+24 }
-func (l *Screen) Done() bool  { return l.tick >= l.spec.Sector+l.spec.Blipps+24+BlackTicks }
+func (l *Screen) Done() bool  { return l.Blank() && l.blackElapsed+1e-9 >= blackSeconds }
 func (l *Screen) Volume() float64 {
-	return max(0, 1-float64(max(0, l.tick-(l.spec.Sector+l.spec.Blipps-42)))/75)
+	return max(0, 1-l.fadeElapsed/fadeSeconds)
+}
+func (l *Screen) SetTickRate(rate int) error {
+	rate, err := timing.Normalize(rate)
+	if err != nil {
+		return err
+	}
+	l.rate = rate
+	return nil
+}
+func (l *Screen) advance() {
+	delta := 1 / float64(l.rate)
+	if l.Blank() {
+		l.blackElapsed += delta
+	}
+	if l.tick >= l.spec.Sector+l.spec.Blipps-42 {
+		l.fadeElapsed += delta
+	}
+	l.tick++
 }
 func (l *Screen) Update() error {
 	if !l.Done() {
-		l.tick++
+		l.advance()
 		l.render()
 	}
 	return nil
