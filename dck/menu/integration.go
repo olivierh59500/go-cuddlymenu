@@ -1,5 +1,21 @@
 package menu
 
+import "fmt"
+
+// NavigateTo uses the original walking and thrusting autopilot to enter a door.
+func (g *Game) NavigateTo(name string) error {
+	for i, door := range demoScreens {
+		if door.Name == name {
+			g.autoPilot = AutoPilot{NextScreen: i, WaitToLoad: 80}
+			return nil
+		}
+	}
+	return fmt.Errorf("menu: unknown door %q", name)
+}
+
+// DelayAutoPilot leaves a readable pause after returning from a screen.
+func (g *Game) DelayAutoPilot(ticks int) { g.autoPilot.ActivateIn = ticks }
+
 // UseExternalAudio lets a screen controller own the single application player.
 // Call before the first Update. Standalone menu behavior remains the default.
 func (g *Game) UseExternalAudio()                     { g.audioReady = true }

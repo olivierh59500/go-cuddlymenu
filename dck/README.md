@@ -34,6 +34,19 @@ The effects include configurable wave chains, profile-based distortion, sparkle
 overlays, feedback ribbons, projected rows and batched circular particles.
 Images, fonts, phases, sizes and layer order remain production parameters.
 
+The unattended tour visits the introduction, every menu door, Reset and the menu
+again. Scene durations exclude loading and walking time.
+
+```sh
+go run ./dck/cmd/cuddlydemo -tour -screen-duration 1m
+go run ./dck/cmd/video -output /path/to/cuddly-demo.mp4
+```
+
+Video export requires FFmpeg. It records the game canvas and its own audio at
+60 FPS with a minute per screen, and writes chapters, a PNG poster and a JSON
+timing report. `-intro-duration`, `-screen-duration` and `-menu-duration` customize
+the route. No desktop pixels or other applications' audio are captured.
+
 ```sh
 go test -race ./...
 go vet ./...

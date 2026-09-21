@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	device "github.com/olivierh59500/democonstructionkit/sound/ebiten"
+	audio "github.com/olivierh59500/democonstructionkit/sound/output"
 	media "go-cuddlymenu/assets/cuddly"
 	"go-cuddlymenu/dck/loader"
 	"go-cuddlymenu/dck/menu"
@@ -179,7 +179,7 @@ func (g *Game) startAudio() error {
 	if err != nil {
 		return err
 	}
-	g.player, err = device.NewPlayer(g.context, stream)
+	g.player, err = device.NewOutputPlayer(g.context, stream)
 	if err != nil {
 		stream.Close()
 		return err

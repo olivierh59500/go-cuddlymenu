@@ -61,7 +61,7 @@ func DoorName(id string) string {
 	if id == "menu" {
 		return "MENU"
 	}
-	for _, name := range []string{"BIG_SPRITE", "COLORSHOCK_II", "NO_NAME_1", "SPREADPOINT", "DIGI_DEMO", "LED_SCROLLER", "DOC", "FULLSCREEN", "STARWARS_DEMO", "KNUCKLE_BUSTER", "DNA_DEMO", "NO_NAME_2"} {
+	for _, name := range []string{"BIG_SPRITE", "COLORSHOCK_II", "NO_NAME_1", "MEGA_SCROLLER", "SPREADPOINT", "DIGI_DEMO", "LED_SCROLLER", "DOC", "FULLSCREEN", "STARWARS_DEMO", "KNUCKLE_BUSTER", "DNA_DEMO", "NO_NAME_2"} {
 		if DoorID(name) == id {
 			return name
 		}

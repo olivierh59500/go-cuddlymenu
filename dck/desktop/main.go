@@ -17,6 +17,9 @@ func Run(first string) {
 	touch := flag.Bool("touch", false, "show touch controls on desktop")
 	list := flag.Bool("list", false, "list native screens")
 	rate := flag.Int("hz", screens.TicksPerSecond, "fixed animation rate: 60 (default) or 50")
+	tourMode := flag.Bool("tour", false, "play the complete introduction and screen tour once")
+	tourOptions := app.DefaultTourOptions()
+	flag.DurationVar(&tourOptions.ScreenDuration, "screen-duration", tourOptions.ScreenDuration, "time spent in each tour screen")
 	flag.Parse()
 	if *list {
 		for _, d := range screens.Catalog() {
@@ -28,7 +31,20 @@ func Run(first string) {
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Cuddly Demo / DCK - Space: menu, F1: screens")
 	ebiten.SetScreenClearedEveryFrame(false)
-	g, err := app.New(app.Config{Screen: *id, Muted: *muted, TouchControls: *touch, TickRate: *rate})
+	config := app.Config{Screen: *id, Muted: *muted, TouchControls: *touch, TickRate: *rate}
+	var g *app.Game
+	var game ebiten.Game
+	var err error
+	if *tourMode {
+		var tour *app.Tour
+		tour, err = app.NewTour(config, tourOptions)
+		if err == nil {
+			g, game = tour.Game, tour
+		}
+	} else {
+		g, err = app.New(config)
+		game = g
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +52,7 @@ func Run(first string) {
 	if err = g.SetTickRate(*rate); err != nil {
 		log.Fatal(err)
 	}
-	if err = ebiten.RunGame(app.CacheDraws(g)); err != nil {
+	if err = ebiten.RunGame(app.CacheDraws(game)); err != nil {
 		log.Fatal(err)
 	}
 }
