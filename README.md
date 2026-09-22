@@ -27,5 +27,5 @@ provide movement/thrust, ENTER, MENU, RESET, SCREENS and the rate selector.
 The original standalone Android menu uses `./scripts/run-android.sh`.
 
 See [the native DCK entry points](dck/README.md) for screen selection, asset layout
-and validation commands. Local module replacements select sibling DCK and
-YM-player checkouts in the workspace.
+and validation commands. Go downloads the published DCK module pinned in
+`go.mod` and `github.com/olivierh59500/ym-player v1.0.0` automatically.

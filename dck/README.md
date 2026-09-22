@@ -2,6 +2,9 @@
 
 The complete production uses shared Go/Ebitengine effects and embedded assets.
 
+Go downloads the published DCK module pinned in `go.mod` and
+`github.com/olivierh59500/ym-player v1.0.0` automatically.
+
 ```sh
 go run ./dck/cmd/cuddlydemo        # Calvin, animated intro, then the menu.
 go run ./dck/cmd/cuddlymenu        # Start directly in the menu.
