@@ -8,6 +8,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
@@ -21,6 +22,11 @@ func (s *Scene) colorshock() {
 		s.err = fmt.Errorf("missing Colorshock motion table")
 		return
 	}
+	backgroundLayer, err := composite.NewBackground(composite.BackgroundConfig{PeriodY: 1152, Filter: ebiten.FilterLinear})
+	if err != nil {
+		s.err = err
+		return
+	}
 	vbl := 0.0
 	position := 0
 	s.render = func() {
@@ -30,8 +36,7 @@ func (s *Scene) colorshock() {
 		x := 400 - math.Sin(vbl*math.Pi/100)*400
 		y := 180 - math.Cos(vbl*math.Pi/200)*300
 		hx, hy := float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2)
-		s.transform(back, background, x, y, 1, 1, 0, hx, hy, 1, ebiten.BlendSourceOver)
-		s.transform(back, background, x, 1152+y, 1, 1, 0, hx, hy, 1, ebiten.BlendSourceOver)
+		backgroundLayer.DrawAt(back, background, x-hx, y-hy)
 		s.draw(s.Canvas, back, 0, 0)
 		r.Step()
 		r.DrawAt(scroll, 0, 0)
@@ -52,11 +57,12 @@ func (s *Scene) megaScroller() {
 	stage, background, mask, merge := s.surface(640, 400), s.surface(500, 240), s.surface(320, 240), s.surface(320, 240)
 	s.filters[stage] = ebiten.FilterNearest
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	for y := 0; y < 68; y++ {
-		for x := 0; x < 68; x++ {
-			s.draw(background, tile, float64(x*8), float64(y*8))
-		}
+	tiles, err := composite.NewBackground(composite.BackgroundConfig{PeriodX: 8, PeriodY: 8, Filter: ebiten.FilterLinear})
+	if err != nil {
+		s.err = err
+		return
 	}
+	tiles.DrawAt(background, tile, 0, 0)
 	for i := 0; i < 48; i++ {
 		s.draw(mask, bars, float64(i*8), 0)
 	}
@@ -102,6 +108,8 @@ func (s *Scene) bigSprite() {
 	}
 	// Start the movement cycle at the authored nine-step phase offset.
 	phase, flip, flipStep, upd, rasterY := 9.0, 1.0, -.02, 0.0, 0.0
+	orbit := motion.DefaultNestedOrbit(motion.Point{X: 320, Y: 200}, motion.Point{X: 160, Y: 400 / 3.7})
+	weave := motion.DefaultWeave(motion.Point{X: 308, Y: 190}, motion.Point{X: 308, Y: 500.0 / 6})
 	s.render = func() {
 		clearBlack(s.Canvas)
 		stage.Clear()
@@ -121,8 +129,8 @@ func (s *Scene) bigSprite() {
 		field.DrawAt(starCanvas, 0, 0)
 		s.transform(stage, starCanvas, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		phase += .008
-		x := 320 + 160*math.Cos(phase*4-math.Cos(phase-.1))
-		y := 200 + 400/3.7*-math.Sin(phase*2.3-math.Cos(phase-.1))
+		position := orbit.At(phase)
+		x, y := position.X, position.Y
 		img, angle := front, 0.0
 		if flip <= .01 {
 			img, angle = back, 180
@@ -136,10 +144,8 @@ func (s *Scene) bigSprite() {
 			flipStep = -.02
 		}
 		for i, img := range letters {
-			inter := upd + float64(i*5)
-			x := 308 + 308*math.Sin(inter/25)*math.Cos(inter/300)
-			y := 190 + (500.0/6)*math.Sin(inter/37) + (500.0/6)*math.Cos(inter/17)
-			s.draw(stage, img, x, y)
+			position := weave.At(upd, i)
+			s.draw(stage, img, position.X, position.Y)
 		}
 		upd += 1.25
 		s.draw(s.Canvas, edge, 84, 481)
@@ -154,6 +160,11 @@ func (s *Scene) fullscreen() {
 	background, logo, raster, font := s.asset("backdrop.png"), s.asset("tcblogo.png"), s.asset("colourbar.png"), s.asset("font-fullscreen.png")
 	off, scroll := s.surface(768, 52), s.surface(768, 536)
 	s.filters[s.Canvas] = ebiten.FilterNearest
+	decor, err := composite.NewBackground(composite.BackgroundConfig{Source: image.Rect(0, 0, 16, background.Bounds().Dy()), PeriodX: 16, Filter: ebiten.FilterNearest})
+	if err != nil {
+		s.err = err
+		return
+	}
 	var rs []*scrolling.Ring
 	for i := 0; i < 7; i++ {
 		rs = append(rs, s.ring(scroll, font, 84, 80, 32, s.data.Strings[fmt.Sprintf("text%d", i)], 6))
@@ -164,11 +175,12 @@ func (s *Scene) fullscreen() {
 	}
 	ys := []float64{-28, 52, 132, 212, 292, 372, 452}
 	backX, upd, loop := 0.0, 0.0, 0
+	weave := motion.DefaultWeave(motion.Point{X: 380, Y: 277}, motion.Point{X: 380, Y: 125.5})
 	s.render = func() {
 		clearBlack(s.Canvas)
 		scroll.Clear()
 		off.Clear()
-		s.draw(s.Canvas, background, backX, 52)
+		decor.DrawAt(s.Canvas, background, backX, 52)
 		backX -= 4
 		if backX <= -16 {
 			backX = 0
@@ -179,10 +191,8 @@ func (s *Scene) fullscreen() {
 		}
 		s.draw(s.Canvas, scroll, 0, 0)
 		for i, img := range letters {
-			inter := upd + float64(i*5)
-			x := 380 + 380*math.Sin(inter/25)*math.Cos(inter/300)
-			y := 277 + 125.5*math.Sin(inter/37) + 125.5*math.Cos(inter/17)
-			s.draw(s.Canvas, img, x, y)
+			position := weave.At(upd, i)
+			s.draw(s.Canvas, img, position.X, position.Y)
 		}
 		upd++
 		s.Canvas.SubImage(image.Rect(0, 0, 768, 52)).(*ebiten.Image).Fill(color.Black)

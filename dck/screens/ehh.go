@@ -6,6 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/motion"
 )
 
 func (s *Scene) ehh() {
@@ -35,6 +36,7 @@ func (s *Scene) ehh() {
 		curve = append(curve, v)
 	}
 	phase, bounce, bounceStep, rollX := 0.0, 0.0, 0.0, 0.0
+	orbit := motion.DefaultNestedOrbit(motion.Point{X: 384, Y: 270}, motion.Point{X: 135, Y: 200})
 	index := 0
 	mode := 0
 	show2, show3, stop := false, false, false
@@ -44,7 +46,8 @@ func (s *Scene) ehh() {
 		b.Clear()
 		c.Clear()
 		phase += .006
-		s.transform(s.Canvas, background, 384+135*math.Cos(phase*4-math.Cos(phase-.1)), 270+200*-math.Sin(phase*2.3-math.Cos(phase-.1)), 1, 1, 0, float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
+		position := orbit.At(phase)
+		s.transform(s.Canvas, background, position.X, position.Y, 1, 1, 0, float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		s.draw(s.Canvas, main, 0, 0)
 		for i, img := range bars {
 			s.transform(s.Canvas, img, 0, 106+44*math.Cos(phases[i]/20), 77, 1, 0, 0, 0, 1, ebiten.BlendSourceOver)

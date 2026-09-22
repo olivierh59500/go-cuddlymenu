@@ -2,13 +2,13 @@ package screens
 
 import (
 	"fmt"
-	"image/color"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/composite"
-	"github.com/olivierh59500/democonstructionkit/render"
+	"github.com/olivierh59500/democonstructionkit/geometry"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) starwars() {
@@ -41,10 +41,13 @@ func (s *Scene) starwars() {
 	// The reference pushes its tail array as one element. It is never sampled,
 	// but its presence extends the counter's wrap threshold by exactly one tick.
 	wave = append(wave, 0)
-	type point struct{ x, y, z float64 }
-	stars := make([]point, 400)
-	for i := range stars {
-		stars[i] = point{math.Floor(s.rnd() * 320), math.Floor(s.rnd() * 200), float64(i) * (130.0 / 400)}
+	field, err := sprites.NewField(sprites.FieldConfig{Count: 400, Depth: sprites.DepthWrap, Near: 0, Far: 130,
+		Spawn: func(i int, _ bool) sprites.Point {
+			return sprites.Point{X: math.Floor(s.rnd()*320) - 160, Y: math.Floor(s.rnd()*200) - 100, Z: float64(i) * (130.0 / 400)}
+		}})
+	if err != nil {
+		s.err = err
+		return
 	}
 	px, py := append([]float64(nil), s.data.Numbers["spriteX"]...), append([]float64(nil), s.data.Numbers["spriteY"]...)
 	period := len(px)
@@ -54,10 +57,19 @@ func (s *Scene) starwars() {
 		s.err = fmt.Errorf("missing Starwars sprite path")
 		return
 	}
-	white := s.surface(1, 1)
-	white.Fill(color.White)
-	batch := render.NewBatch(800)
-	batch.Options.AntiAlias = true
+	fieldRenderer := sprites.NewFieldRenderer(400)
+	s.closeEffects = append(s.closeEffects, fieldRenderer.Close)
+	fieldStyle := sprites.FieldStyle{Antialias: true, Sample: func(p sprites.FieldSample, a *sprites.FieldAppearance) bool {
+		shade := float32(1)
+		if p.Z > 130.0/3 {
+			shade = float32(170*257) / 65535
+		}
+		if p.Z > 260.0/3 {
+			shade = float32(85*257) / 65535
+		}
+		a.Tint.Scale(shade, shade, shade, 1)
+		return true
+	}}
 	type row struct{ y, scale float64 }
 	rows := make([]row, 360)
 	for i := -160; i < 200; i++ {
@@ -86,29 +98,8 @@ func (s *Scene) starwars() {
 		s.transform(main, background, 30, 10, 1, 1, 0, 0, 0, fade*.05, ebiten.BlendSourceOver)
 		depth += 1.5
 		rotation -= .02
-		sin, cos := math.Sincos(rotation)
-		batch.Begin(main, white)
-		for _, p := range stars {
-			z := p.z - depth
-			if z > 130 || z < 0 {
-				z -= 130 * math.Floor(z/130)
-			}
-			if z == 0 {
-				continue
-			}
-			x := (p.x-160)*cos - (p.y-100)*sin
-			y := (p.x-160)*sin + (p.y-100)*cos
-			shade := uint8(255)
-			if z > 130.0/3 {
-				shade = 170
-			}
-			if z > 260.0/3 {
-				shade = 85
-			}
-			scale := 128 / z
-			batch.Rect(x*scale+160, y*scale+100, 1, 1, white.Bounds(), color.RGBA{shade, shade, shade, 255})
-		}
-		batch.Flush()
+		field.Sample(sprites.FieldView{Camera: geometry.Camera{Center: geometry.Vec2{X: 160, Y: 100}, Focal: 128, Near: math.SmallestNonzeroFloat64}, Offset: geometry.Vec3{Z: -depth}, Angle: rotation})
+		fieldRenderer.Draw(main, field.Samples(), fieldStyle)
 		scrollY--
 		if scrollY < -16 {
 			scrollY = 0

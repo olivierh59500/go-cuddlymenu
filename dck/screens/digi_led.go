@@ -6,7 +6,10 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/motion"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) digi() {
@@ -21,6 +24,12 @@ func (s *Scene) digi() {
 	}
 	curve := digiCurve()
 	counter, upd := 0, 0.0
+	weave := motion.DefaultWeave(motion.Point{X: 306, Y: 207}, motion.Point{X: 306, Y: 90.5})
+	group, err := sprites.NewGroup(sprites.GroupConfig{Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave})
+	if err != nil {
+		s.err = err
+		return
+	}
 	phase1, phase2 := 0.0, 0.0
 	s.render = func() {
 		clearBlack(s.Canvas)
@@ -35,12 +44,9 @@ func (s *Scene) digi() {
 		r.Step()
 		r.DrawAt(stage, 0, 340-math.Abs(math.Sin(phase2)*40))
 		phase2 += .06
-		for i, img := range letters {
-			inter := upd + float64(i*5)
-			x := 306 + 306*math.Sin(inter/25)*math.Cos(inter/300)
-			y := 207 + 90.5*math.Sin(inter/37) + 90.5*math.Cos(inter/17)
-			s.draw(stage, img, x, y)
-		}
+		group.SetPhase(upd)
+		s.err = group.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond})
+		group.Draw(stage)
 		upd++
 		s.draw(s.Canvas, stage, 64, 70)
 	}
@@ -98,11 +104,20 @@ func (s *Scene) led() {
 	stage, led, off, warped, tiled := s.surface(640, 400), s.surface(640, 112), s.surface(384, 233), s.surface(384, 233), s.surface(384, 233)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[stage] = ebiten.FilterNearest
-	for x := 0; x < 384; x += 32 {
-		for y := 0; y < 233; y += 33 {
-			s.draw(tiled, tile, float64(x), float64(y))
-		}
+	tiles, err := composite.NewBackground(composite.BackgroundConfig{PeriodX: 32, PeriodY: 33, Filter: ebiten.FilterLinear})
+	if err != nil {
+		s.err = err
+		return
 	}
+	tiles.DrawAt(tiled, tile, 0, 0)
+	bubbles := s.surface(640, 112)
+	bubbleTiles, err := composite.NewBackground(composite.BackgroundConfig{PeriodX: 16, PeriodY: 16, Filter: ebiten.FilterLinear})
+	if err != nil {
+		s.err = err
+		return
+	}
+	// The authored bubble grid ends two pixels before the text surface edge.
+	bubbleTiles.DrawAt(bubbles.SubImage(image.Rect(0, 0, 638, 112)).(*ebiten.Image), bubble, -2, 0)
 	gradient := ledGradient()
 	s.surfaces = append(s.surfaces, gradient)
 	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 6, Spatial: .08, Speed: .2}}}
@@ -152,11 +167,7 @@ func (s *Scene) led() {
 		}
 		s.draw(s.Canvas, stage, 64, 70)
 		led.Clear()
-		for x := 0; x < 640; x += 16 {
-			for y := 0; y < 112; y += 16 {
-				s.draw(led, bubble, float64(x-2), float64(y))
-			}
-		}
+		s.draw(led, bubbles, 0, 0)
 		r.Step()
 		r.DrawAt(led, 0, 2)
 		s.draw(s.Canvas, led, 64, 340-math.Abs(math.Sin(ledBounce)*60))
