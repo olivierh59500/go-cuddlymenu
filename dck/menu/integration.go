@@ -34,9 +34,9 @@ func (g *Game) Close() error {
 		g.audioPlayer.Close()
 		g.audioPlayer = nil
 	}
-	if g.ymPlayer != nil {
-		g.ymPlayer.Close()
-		g.ymPlayer = nil
+	if g.musicStream != nil {
+		g.musicStream.Close()
+		g.musicStream = nil
 	}
 	return nil
 }

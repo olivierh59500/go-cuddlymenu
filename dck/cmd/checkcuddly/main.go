@@ -16,10 +16,9 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
-	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
-	"github.com/hajimehoshi/ebiten/v2/audio/wav"
-	"github.com/olivierh59500/ym-player/pkg/stsound"
+	"github.com/olivierh59500/democonstructionkit/sound"
 	media "go-cuddlymenu/assets/cuddly"
 	"go-cuddlymenu/dck/screens"
 )
@@ -109,43 +108,21 @@ func run() error {
 		}
 		sum := sha256.Sum256(b)
 		m := music{Screen: d.ID, Path: name, SHA256: hex.EncodeToString(sum[:])}
-		if path.Ext(name) == ".ym" {
-			p := stsound.CreateWithRate(48000)
-			if err = p.LoadMemory(b); err != nil {
-				p.Destroy()
-				return fmt.Errorf("%s: %w", name, err)
-			}
-			info := p.GetInfo()
-			m.Format, m.Title, m.DurationMS = info.SongType, info.SongName, uint32(info.MusicTimeInMs)
-			samples := make([]int16, 96000)
-			p.Compute(samples, len(samples))
-			for _, v := range samples {
-				if v != 0 {
-					m.NonzeroSamples++
-				}
-			}
-			p.Destroy()
-		} else {
-			var decoded io.Reader
-			if path.Ext(name) == ".wav" {
-				decoded, err = wav.DecodeWithSampleRate(48000, bytes.NewReader(b))
-				m.Format = "WAV decoded to stereo PCM"
-			} else {
-				decoded, err = mp3.DecodeWithSampleRate(48000, bytes.NewReader(b))
-				m.Format = "MP3 decoded to stereo PCM"
-			}
-			if err != nil {
-				return err
-			}
-			pcm := make([]byte, 96000*4)
-			n, err := io.ReadFull(decoded, pcm)
-			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
-				return err
-			}
-			for i := 0; i+1 < n; i += 2 {
-				if pcm[i] != 0 || pcm[i+1] != 0 {
-					m.NonzeroSamples++
-				}
+		stream, err := sound.Open(name, b, sound.Options{SampleRate: 48000, PCMFormat: sound.PCM16})
+		if err != nil {
+			return fmt.Errorf("%s: %w", name, err)
+		}
+		info := stream.Metadata()
+		m.Format, m.Title, m.DurationMS = string(info.Format), info.Title, uint32(info.Duration/time.Millisecond)
+		pcm := make([]byte, 96000*4)
+		n, readErr := io.ReadFull(stream, pcm)
+		stream.Close()
+		if readErr != nil && readErr != io.EOF && readErr != io.ErrUnexpectedEOF {
+			return readErr
+		}
+		for i := 0; i+1 < n; i += 2 {
+			if pcm[i] != 0 || pcm[i+1] != 0 {
+				m.NonzeroSamples++
 			}
 		}
 		if m.NonzeroSamples == 0 {

@@ -28,4 +28,7 @@ The original standalone Android menu uses `./scripts/run-android.sh`.
 
 See [the native DCK entry points](dck/README.md) for screen selection, asset layout
 and validation commands. Go downloads the published DCK module pinned in
-`go.mod` and `github.com/olivierh59500/ym-player v1.0.0` automatically.
+`go.mod` and its audio dependencies automatically. Every DCK entry point uses
+`sound.Open(filename, data, options)`: decoder selection, metadata, PCM conversion
+and looping are handled by DCK for YM, WAV and MP3 soundtracks. The standalone
+DCK menu shares this same entry point.

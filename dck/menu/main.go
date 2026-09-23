@@ -11,6 +11,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/olivierh59500/democonstructionkit/sound"
 	audio "github.com/olivierh59500/democonstructionkit/sound/output"
 )
 
@@ -68,7 +69,7 @@ type Game struct {
 	assets          *Assets
 	audioContext    *audio.Context
 	audioPlayer     *audio.Player
-	ymPlayer        *YMPlayer
+	musicStream     *sound.Stream
 	audioReady      bool
 
 	mapTiles      *TileSet
@@ -170,18 +171,18 @@ func (g *Game) initAudio() {
 		return
 	}
 	var err error
-	g.ymPlayer, err = NewYMPlayer(g.assets.MenuYM, sampleRate, true)
+	g.musicStream, err = sound.Open("menu.ym", g.assets.MenuYM, sound.Options{SampleRate: sampleRate, Loop: true})
 	if err != nil {
-		log.Printf("failed to create YM player: %v", err)
+		log.Printf("failed to open soundtrack: %v", err)
 		return
 	}
-	g.audioPlayer, err = g.audioContext.NewPlayer(g.ymPlayer)
+	g.audioPlayer, err = g.audioContext.NewPlayerF32(g.musicStream)
 	if err != nil {
 		log.Printf("failed to create audio player: %v", err)
-		if closeErr := g.ymPlayer.Close(); closeErr != nil {
-			log.Printf("failed to close YM player: %v", closeErr)
+		if closeErr := g.musicStream.Close(); closeErr != nil {
+			log.Printf("failed to close soundtrack: %v", closeErr)
 		}
-		g.ymPlayer = nil
+		g.musicStream = nil
 		return
 	}
 	g.audioPlayer.SetVolume(musicVolume)

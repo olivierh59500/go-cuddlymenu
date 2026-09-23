@@ -9,7 +9,9 @@ require (
 
 require (
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
-	github.com/olivierh59500/go-zikmu v0.0.0-20260916172410-b245427b8556 // indirect
+	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
+	github.com/jfreymuth/vorbis v1.0.2 // indirect
+	github.com/olivierh59500/go-zikmu v0.0.0-20260923085818-5b7edcccaf3d // indirect
 )
 
 require (
@@ -18,7 +20,7 @@ require (
 	github.com/ebitengine/oto/v3 v3.4.1 // indirect
 	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
-	github.com/olivierh59500/democonstructionkit v0.0.0-20260922224241-0620f55a8ab4
+	github.com/olivierh59500/democonstructionkit v0.0.0-20260923094425-b36e830e4efd
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 )

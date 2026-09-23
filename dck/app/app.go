@@ -2,15 +2,10 @@
 package app
 
 import (
-	"bytes"
-	"fmt"
 	"image/color"
-	"path"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
-	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	device "github.com/olivierh59500/democonstructionkit/sound/ebiten"
@@ -157,25 +152,7 @@ func (g *Game) startAudio() error {
 	if err != nil {
 		return err
 	}
-	var stream *sound.Stream
-	switch strings.ToLower(path.Ext(g.track)) {
-	case ".ym":
-		stream, err = sound.NewYM(data, sound.YMOptions{SampleRate: 48000, Loop: g.loopMusic})
-	case ".wav":
-		var decoded *wav.Stream
-		decoded, err = wav.DecodeWithSampleRate(48000, bytes.NewReader(data))
-		if err == nil {
-			stream, err = sound.NewPCM16(decoded, sound.PCM16Options{SampleRate: 48000, Loop: g.loopMusic})
-		}
-	case ".mp3":
-		var decoded *mp3.Stream
-		decoded, err = mp3.DecodeWithSampleRate(48000, bytes.NewReader(data))
-		if err == nil {
-			stream, err = sound.NewPCM16(decoded, sound.PCM16Options{SampleRate: 48000, Loop: g.loopMusic})
-		}
-	default:
-		return fmt.Errorf("unsupported audio asset %q", g.track)
-	}
+	stream, err := sound.Open(g.track, data, sound.Options{SampleRate: 48000, Loop: g.loopMusic})
 	if err != nil {
 		return err
 	}

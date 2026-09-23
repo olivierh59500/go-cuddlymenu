@@ -2,18 +2,20 @@ package menu
 
 import (
 	"encoding/binary"
+	"github.com/olivierh59500/democonstructionkit/sound"
+	"io"
 	"testing"
 
 	gameassets "go-cuddlymenu/dck/assets"
 )
 
-func TestYMPlayerReadProducesStereoWithoutAllocating(t *testing.T) {
+func TestMusicReadProducesStereoWithoutAllocating(t *testing.T) {
 	data, err := gameassets.Files.ReadFile("menu/menu.ym")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	player, err := NewYMPlayer(data, sampleRate, true)
+	player, err := sound.Open("menu.ym", data, sound.Options{SampleRate: sampleRate, Loop: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +25,7 @@ func TestYMPlayerReadProducesStereoWithoutAllocating(t *testing.T) {
 		}
 	}()
 
-	pcm := make([]byte, 4096*4)
+	pcm := make([]byte, 4096*8)
 	n, err := player.Read(pcm)
 	if err != nil {
 		t.Fatalf("Read returned an error for a looping stream: %v", err)
@@ -33,11 +35,11 @@ func TestYMPlayerReadProducesStereoWithoutAllocating(t *testing.T) {
 	}
 
 	nonSilent := false
-	for offset := 0; offset < n; offset += 4 {
-		left := int16(binary.LittleEndian.Uint16(pcm[offset : offset+2]))
-		right := int16(binary.LittleEndian.Uint16(pcm[offset+2 : offset+4]))
+	for offset := 0; offset < n; offset += 8 {
+		left := binary.LittleEndian.Uint32(pcm[offset : offset+4])
+		right := binary.LittleEndian.Uint32(pcm[offset+4 : offset+8])
 		if left != right {
-			t.Fatalf("PCM frame %d differs between channels: left=%d right=%d", offset/4, left, right)
+			t.Fatalf("PCM frame %d differs between channels: left=%d right=%d", offset/8, left, right)
 		}
 		if left != 0 {
 			nonSilent = true
@@ -63,34 +65,19 @@ func TestYMPlayerReadProducesStereoWithoutAllocating(t *testing.T) {
 	}
 }
 
-func TestYMPlayerReadAfterCloseReturnsSilence(t *testing.T) {
+func TestMusicReadAfterCloseFails(t *testing.T) {
 	data, err := gameassets.Files.ReadFile("menu/menu.ym")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	player, err := NewYMPlayer(data, sampleRate, true)
+	player, err := sound.Open("menu.ym", data, sound.Options{SampleRate: sampleRate, Loop: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := player.Close(); err != nil {
 		t.Fatal(err)
 	}
-
-	pcm := make([]byte, 64)
-	for i := range pcm {
-		pcm[i] = 0xff
-	}
-	n, err := player.Read(pcm)
-	if n != len(pcm) {
-		t.Fatalf("Read returned %d bytes, want %d", n, len(pcm))
-	}
-	if err == nil {
-		t.Fatal("Read after Close returned a nil error")
-	}
-	for i, sampleByte := range pcm {
-		if sampleByte != 0 {
-			t.Fatalf("PCM byte %d after Close is %d, want silence", i, sampleByte)
-		}
+	if n, err := player.Read(make([]byte, 64)); n != 0 || err != io.ErrClosedPipe {
+		t.Fatalf("closed music read = %d, %v; want 0, ErrClosedPipe", n, err)
 	}
 }
