@@ -14,7 +14,7 @@ func (s *Scene) ehh() {
 	font1, font2, font3 := s.asset("bannerfont.png"), s.asset("font2.png"), s.asset("font3.png")
 	a, b, c, roll := s.surface(578, 64), s.surface(640, 32), s.surface(446, 10), s.surface(578, 66)
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	r1, r2, r3 := s.ring(a, font1, 64, 64, 32, s.data.Strings["text1"], 6), s.ring(b, font2, 32, 32, 32, s.data.Strings["text2"], 6), s.ring(c, font3, 16, 10, 32, s.data.Strings["text3"], 4)
+	r1, r2, r3 := s.ring(a, font1, "cuddly-ehh-main", s.data.Strings["text1"], 6), s.ring(b, font2, "cuddly-ehh-middle", s.data.Strings["text2"], 6), s.ring(c, font3, "cuddly-ehh-small", s.data.Strings["text3"], 4)
 	var bars []*ebiten.Image
 	var phases []float64
 	for i := 1; i < 8; i++ {

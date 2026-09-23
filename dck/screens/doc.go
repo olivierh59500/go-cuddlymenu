@@ -13,9 +13,9 @@ import (
 func (s *Scene) doc() {
 	background, mountains, raster, ball := s.asset("backdrop.png"), s.asset("mountains.png"), s.asset("rasters.png"), s.asset("ball.png")
 	intro, outer, outerRows, inner, innerRows := s.surface(640, 50), s.surface(760, 50), s.surface(640, 50), s.surface(760, 50), s.surface(640, 120)
-	r1 := s.ring(intro, s.asset("kh6.png"), 62, 50, 32, s.data.Strings["text1"], 10)
-	r2 := s.ring(inner, s.asset("font_in.png"), 62, 50, 32, s.data.Strings["text2"], 10)
-	r3 := s.ring(outer, s.asset("font_out.png"), 62, 50, 32, s.data.Strings["text2"], 10)
+	r1 := s.ring(intro, s.asset("kh6.png"), "cuddly-doc", s.data.Strings["text1"], 10)
+	r2 := s.ring(inner, s.asset("font_in.png"), "cuddly-doc", s.data.Strings["text2"], 10)
+	r3 := s.ring(outer, s.asset("font_out.png"), "cuddly-doc", s.data.Strings["text2"], 10)
 	var shadows []*ebiten.Image
 	for _, name := range []string{"shadow1.png", "shadow2.png", "shadow3.png", "shadow4.png"} {
 		shadows = append(shadows, s.asset(name))

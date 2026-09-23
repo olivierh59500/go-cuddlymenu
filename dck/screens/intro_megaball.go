@@ -8,7 +8,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
-	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
@@ -98,8 +97,8 @@ func (s *Scene) megaball() {
 	half, scroll := s.surface(384, 270), s.surface(640, 400)
 	s.filters[half] = ebiten.FilterNearest
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	r := s.ring(scroll, big, 320, 288, 32, s.data.Strings["text"], 10)
-	grid := scrolling.BitmapGrid{Image: font, Width: 8, Height: 8, Columns: font.Bounds().Dx() / 8, ColumnSpan: float64(font.Bounds().Dx()) / 8, First: 32, Filter: ebiten.FilterNearest}
+	r := s.ring(scroll, big, "cuddly-megaball", s.data.Strings["text"], 10)
+	grid := s.bitmap(font, "cuddly-values", ebiten.FilterNearest)
 	params := []int{251, 246, 1, 4, 5, -10, -1, -2, 1}
 	selected, blink := 8, 0
 	locations := [][2]float64{{272, 53}, {272, 45}, {272, 37}, {176, 53}, {176, 45}, {176, 37}, {80, 53}, {80, 45}, {80, 37}}

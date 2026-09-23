@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"image"
 	"image/color"
 	"log"
@@ -721,28 +722,7 @@ func maxTileIndex(mapData [][]int) int {
 	return max
 }
 
-func BuildScrollMap(text string) []int {
-	clean := make([]rune, 0, len(text))
-	for _, r := range text {
-		if r == '\n' || r == '\r' {
-			continue
-		}
-		clean = append(clean, r)
-	}
-
-	result := make([]int, 0, len(clean)*3)
-	for _, r := range clean {
-		p := int(r) - 32
-		if p < 0 || p >= len(scrollerCharWidth) {
-			p = 0
-		}
-		blocks := scrollerCharWidth[p]
-		for j := 0; j < blocks; j++ {
-			result = append(result, p*3+j)
-		}
-	}
-	return result
-}
+func BuildScrollMap(text string) []int { return presets.CuddlyChromeTiles(text) }
 
 const crtShaderSrc = `
 package main

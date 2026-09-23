@@ -61,14 +61,12 @@ func NewTileSet(img *ebiten.Image, tileW, tileH int) *TileSet {
 	if rows < 1 {
 		rows = 1
 	}
-	total := columns * rows
-	tiles := make([]*ebiten.Image, total)
-	for y := 0; y < rows; y++ {
-		for x := 0; x < columns; x++ {
-			rect := image.Rect(x*tileW, y*tileH, (x+1)*tileW, (y+1)*tileH)
-			tiles[y*columns+x] = img.SubImage(rect).(*ebiten.Image)
-		}
+	tiles, err := scrolling.GridImages(img, image.Pt(tileW, tileH), columns, columns*rows)
+	if err != nil {
+		tiles = []*ebiten.Image{img}
+		columns = 1
 	}
+
 	return &TileSet{
 		Image:   img,
 		Tiles:   tiles,

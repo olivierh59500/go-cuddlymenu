@@ -6,7 +6,8 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/olivierh59500/democonstructionkit/composite"
+	kit "github.com/olivierh59500/democonstructionkit"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 )
 
@@ -29,16 +30,19 @@ func (s *Scene) spreadpoint() {
 		cards = append(cards, s.asset(fmt.Sprintf("intro%d.png", i)))
 	}
 	in, out, raster, font, gradient, dnaFont, dnaGradient, ball := s.asset("tcb-in.png"), s.asset("tcb-out.png"), s.asset("tcb-raster.png"), s.asset("font.png"), s.asset("gradient.png"), s.asset("font_dna.png"), s.asset("gradient_dna.png"), s.asset("ball.png")
-	main, logo, spread, textSurface, dnaText := s.surface(416, 276), s.surface(128, 128), s.surface(320, 200), s.surface(len([]rune(s.data.Strings["text"]))*8+320, 6), s.surface(320, 25)
+	main, logo, spread, dnaText := s.surface(416, 276), s.surface(128, 128), s.surface(320, 200), s.surface(320, 25)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	// Stretch single-pixel ramps without sampling transparent side padding.
 	s.filters[spread] = ebiten.FilterNearest
-	grid := scrolling.BitmapGrid{Image: font, Width: 8, Height: 6, Columns: font.Bounds().Dx() / 8, ColumnSpan: float64(font.Bounds().Dx()) / 8, First: 32, Filter: ebiten.FilterLinear}
-	grid.Print(textSurface, s.data.Strings["text"], 0, 0, 1, 1)
-	head := s.surface(320, 6)
-	s.part(head, textSurface, composite.Region{Width: 320, Height: 6}, 0, 0, 1, 1)
-	s.draw(textSurface, head, float64(textSurface.Bounds().Dx()-320), 0)
-	r := s.ring(dnaText, dnaFont, 32, 25, 32, s.data.Strings["text_dna"], 4)
+	grid := s.bitmap(font, "cuddly-spreadpoint", ebiten.FilterLinear)
+	bandsConfig := presets.CuddlySpreadpointBands(grid, s.data.Strings["text"])
+	bands, err := scrolling.New(scrolling.Config{Bands: &bandsConfig})
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, bands.Close)
+	r := s.ring(dnaText, dnaFont, "cuddly-dna", s.data.Strings["text_dna"], 4)
 	dna := s.feedback(320, 64, 4, 2, 1, 4, s.data.Numbers["dna_pos"])
 	var angles []float64
 	a := math.Pi
@@ -101,17 +105,11 @@ func (s *Scene) spreadpoint() {
 		clearBlack(main)
 		if iteration >= 1284 {
 			spread.Clear()
-			speeds := []int{12, 11, 10, 9, 8, 7, 6, 5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8, 7, 6, 5, 4, 5, 6, 7, 8, 9, 10, 11, 12}
-			for row, speed := range speeds {
-				travel := speed * (iteration - 1284)
-				x, source := 0, 0
-				if travel < 320 {
-					x = 320 - travel
-				} else {
-					source = (travel - 320) % (textSurface.Bounds().Dx() - 320)
-				}
-				s.part(spread, textSurface, composite.Region{X: float64(source), Width: 320, Height: 6}, float64(x), float64(row*6), 1, 1)
+			if err := bands.Update(kit.Frame{Tick: uint64(iteration - 1284)}); err != nil {
+				s.err = err
+				return
 			}
+			bands.Draw(spread)
 			s.transform(spread, gradient, 0, 0, 320, 1, 0, 0, 0, 1, ebiten.BlendSourceIn)
 			s.draw(main, spread, 52, 29)
 		}

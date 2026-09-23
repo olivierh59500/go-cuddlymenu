@@ -4,6 +4,7 @@ package loader
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -68,7 +69,11 @@ func NewAtRate(name string, rate int) (*Screen, error) {
 		l.Close()
 		return nil, err
 	}
-	l.font = scrolling.BitmapGrid{Image: brown, Width: 16, Height: 16, Columns: brown.Bounds().Dx() / 16, First: 32}
+	l.font, err = presets.BitmapFont("cuddly-loader", brown, ebiten.FilterNearest)
+	if err != nil {
+		l.Close()
+		return nil, err
+	}
 	f := l.font
 	f.Image = grey
 	f.Columns = grey.Bounds().Dx() / 16

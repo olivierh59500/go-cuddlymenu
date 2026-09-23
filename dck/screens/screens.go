@@ -11,6 +11,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/assets"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	media "go-cuddlymenu/assets/cuddly"
 	"go-cuddlymenu/dck/timing"
@@ -206,13 +207,21 @@ func (s *Scene) surface(w, h int) *ebiten.Image {
 	s.filters[img] = ebiten.FilterLinear
 	return img
 }
-func (s *Scene) ring(dst *ebiten.Image, font *ebiten.Image, w, h float64, first rune, text string, speed float64) *scrolling.Ring {
-	r, err := scrolling.NewRing(scrolling.RingConfig{Text: text, Font: scrolling.BitmapGrid{Image: font, Width: w, Height: h, Columns: int(float64(font.Bounds().Dx()) / w), ColumnSpan: float64(font.Bounds().Dx()) / w, First: first, Filter: s.filters[dst]}, Viewport: float64(dst.Bounds().Dx()), Speed: speed, Controls: true})
+func (s *Scene) bitmap(atlas *ebiten.Image, recipe string, filter ebiten.Filter) scrolling.BitmapGrid {
+	grid, err := presets.BitmapFont(recipe, atlas, filter)
+	if err != nil {
+		s.err = err
+	}
+	return grid
+}
+func (s *Scene) ring(dst, atlas *ebiten.Image, recipe, text string, speed float64) *scrolling.Ring {
+	r, err := scrolling.NewRing(scrolling.RingConfig{Text: text, Font: s.bitmap(atlas, recipe, s.filters[dst]), Viewport: float64(dst.Bounds().Dx()), Speed: speed, Controls: true})
 	if err != nil {
 		s.err = err
 	}
 	return r
 }
+
 func (s *Scene) draw(dst, src *ebiten.Image, x, y float64) {
 	s.transform(dst, src, x, y, 1, 1, 0, 0, 0, 1, ebiten.BlendSourceOver)
 }

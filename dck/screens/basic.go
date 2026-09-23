@@ -16,7 +16,7 @@ import (
 func (s *Scene) colorshock() {
 	background, logo, font, accent := s.asset("fond_tcb.png"), s.asset("logo_tcb.png"), s.asset("font_tcb3.png"), s.asset("scroll_acc.png")
 	back, scroll := s.surface(768, 540), s.surface(600, 500)
-	r := s.ring(scroll, font, 70, 52, 32, s.data.Strings["text"], 6)
+	r := s.ring(scroll, font, "cuddly-colorshock", s.data.Strings["text"], 6)
 	positions := s.data.Numbers["movescroll"]
 	if len(positions) < 1873 {
 		s.err = fmt.Errorf("missing Colorshock motion table")
@@ -66,7 +66,7 @@ func (s *Scene) megaScroller() {
 	for i := 0; i < 48; i++ {
 		s.draw(mask, bars, float64(i*8), 0)
 	}
-	r := s.ring(merge, font, 240, 240, 31, s.data.Strings["text"], 10)
+	r := s.ring(merge, font, "cuddly-megascroller", s.data.Strings["text"], 10)
 	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterNearest, Waves: []composite.StripWave{{Amplitude: 30, Spatial: .03, Speed: -.05}, {Amplitude: 30, Spatial: .01, Speed: .08}}}
 	y, dy := 45.0, -2.0
 	s.render = func() {
@@ -95,7 +95,7 @@ func (s *Scene) bigSprite() {
 	stage, a, b, starCanvas := s.surface(640, 400), s.surface(568, 41), s.surface(568, 41), s.surface(320, 200)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[starCanvas] = ebiten.FilterNearest
-	r1, r2 := s.ring(a, fontIn, 83.25, 41, 32, s.data.Strings["text"], 8), s.ring(b, fontOut, 83.25, 41, 32, s.data.Strings["text"], 8)
+	r1, r2 := s.ring(a, fontIn, "cuddly-bigsprite", s.data.Strings["text"], 8), s.ring(b, fontOut, "cuddly-bigsprite", s.data.Strings["text"], 8)
 	field, err := sprites.NewStreaks(sprites.StreakConfig{Width: 320, Height: 200, Count: 80, Speed: 4, Focal: 100, CenterX: 160, CenterY: 100, Color: color.RGBA{170, 170, 170, 255}, Random: s.rnd})
 	if err != nil {
 		s.err = err
@@ -167,7 +167,7 @@ func (s *Scene) fullscreen() {
 	}
 	var rs []*scrolling.Ring
 	for i := 0; i < 7; i++ {
-		rs = append(rs, s.ring(scroll, font, 84, 80, 32, s.data.Strings[fmt.Sprintf("text%d", i)], 6))
+		rs = append(rs, s.ring(scroll, font, "cuddly-fullscreen", s.data.Strings[fmt.Sprintf("text%d", i)], 6))
 	}
 	var letters []*ebiten.Image
 	for _, name := range []string{"N", "O", "I", "N", "U", "E", "H", "T"} {
@@ -215,7 +215,7 @@ func (s *Scene) fullscreen() {
 func (s *Scene) knucklebuster() {
 	logo, body, head, bass, left, right, font := s.asset("logo.png"), s.asset("batteur.png"), s.asset("tete2.png"), s.asset("bdrum.png"), s.asset("ldrum.png"), s.asset("rdrum.png"), s.asset("fonts.png")
 	stage, scroll := s.surface(640, 400), s.surface(640, 34)
-	r := s.ring(scroll, font, 64, 34, 32, s.data.Strings["text"], 8)
+	r := s.ring(scroll, font, "cuddly-knucklebuster", s.data.Strings["text"], 8)
 	timer := 0
 	var on [3]bool
 	var triggers [3]float64

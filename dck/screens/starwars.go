@@ -5,23 +5,25 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/geometry"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) starwars() {
 	background, green, red, raster, font, sprite := s.asset("bg.png"), s.asset("fontg.png"), s.asset("fontr.png"), s.asset("scrollraster.png"), s.asset("swfont.png"), s.asset("theunionsprite.png")
-	main, a, b, masked, text, projected := s.surface(320, 200), s.surface(320, 25), s.surface(320, 25), s.surface(320, 200), s.surface(320, 420), s.surface(320, 400)
+	main, a, b, masked := s.surface(320, 200), s.surface(320, 25), s.surface(320, 25), s.surface(320, 200)
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	r1, r2 := s.ring(a, green, 32, 26, 32, s.data.Strings["stext"], 8), s.ring(b, red, 32, 26, 32, s.data.Strings["stext"], 8)
+	r1, r2 := s.ring(a, green, "cuddly-starwars-scroll", s.data.Strings["stext"], 8), s.ring(b, red, "cuddly-starwars-scroll", s.data.Strings["stext"], 8)
 	words := s.data.Lists["sstext"]
 	if len(words) < 30 {
 		s.err = fmt.Errorf("missing Starwars text rows")
 		return
 	}
-	grid := scrolling.BitmapGrid{Image: font, Width: 17, Height: 11, Columns: font.Bounds().Dx() / 17, ColumnSpan: float64(font.Bounds().Dx()) / 17, First: 32, Filter: ebiten.FilterLinear}
+	grid := s.bitmap(font, "cuddly-starwars-crawl", ebiten.FilterLinear)
 	var wave []float64
 	for _, segment := range []struct {
 		n        int
@@ -70,17 +72,22 @@ func (s *Scene) starwars() {
 		a.Tint.Scale(shade, shade, shade, 1)
 		return true
 	}}
-	type row struct{ y, scale float64 }
-	rows := make([]row, 360)
-	for i := -160; i < 200; i++ {
-		scale := 250 / (250 + float64(i))
-		rows[i+160] = row{roundHalfUp((float64(i) + 350) * scale), scale}
+	crawlConfig, err := presets.CuddlyStarwarsCrawl(grid, words)
+	if err != nil {
+		s.err = err
+		return
 	}
+	crawl, err := scrolling.New(scrolling.Config{Crawl: &crawlConfig})
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, crawl.Close)
 	depth, rotation, fade, rasterY := 0.0, 180.0, 0.0, 0.0
-	flash, waveIndex, word, scrollY, spriteIndex := 0, 20, 0, 0, 0
+	flash, waveIndex, spriteIndex := 0, 20, 0
 	s.render = func() {
 		clearBlack(s.Canvas)
-		for _, surface := range []*ebiten.Image{main, a, b, masked, text, projected} {
+		for _, surface := range []*ebiten.Image{main, a, b, masked} {
 			surface.Clear()
 		}
 		flash++
@@ -100,37 +107,11 @@ func (s *Scene) starwars() {
 		rotation -= .02
 		field.Sample(sprites.FieldView{Camera: geometry.Camera{Center: geometry.Vec2{X: 160, Y: 100}, Focal: 128, Near: math.SmallestNonzeroFloat64}, Offset: geometry.Vec3{Z: -depth}, Angle: rotation})
 		fieldRenderer.Draw(main, field.Samples(), fieldStyle)
-		scrollY--
-		if scrollY < -16 {
-			scrollY = 0
-			word++
-			if word > len(words)-30 {
-				word = 0
-			}
+		if err := crawl.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		for line := 0; line < 30; line++ {
-			chars := []rune(words[line+word])
-			x := float64(300-len(chars)*16)/2 - 8
-			for i, ch := range chars {
-				if i >= 12 {
-					break
-				}
-				grid.Print(text, string(ch), x+float64(i*20), float64(line*17+scrollY), 1, 1)
-			}
-		}
-		previousY := 0.0
-		for i, p := range rows {
-			if p.y != previousY {
-				h := 1 - float64(i)/float64(len(rows))
-				srcY := float64(310 - i)
-				if srcY >= 0 {
-					scale := p.scale * .8
-					composite.Row{Source: composite.Region{Y: srcY, Width: 320, Height: h}, X: 160 - 160*scale, Y: p.y - h/2, Width: 320 * scale, Height: h, Filter: ebiten.FilterLinear}.Draw(projected, text)
-				}
-			}
-			previousY = p.y
-		}
-		s.part(main, projected, composite.Region{Y: 300, Width: 320, Height: 100}, 0, 100, 1, 1)
+		crawl.Draw(main)
 		rasterY -= .5
 		if rasterY < -72 {
 			rasterY = 0

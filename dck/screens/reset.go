@@ -4,7 +4,8 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/olivierh59500/democonstructionkit/composite"
+	kit "github.com/olivierh59500/democonstructionkit"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 )
 
@@ -12,22 +13,22 @@ func (s *Scene) reset() {
 	backdrop, raster, fontW, fontP, fontC := s.asset("backdrop.png"), s.asset("raster6.png"), s.asset("fontw.png"), s.asset("fontp.png"), s.asset("cuddlyfont1.png")
 	upA, downA, upB, downB := s.asset("raster2_up.png"), s.asset("raster2_down.png"), s.asset("raster1_up.png"), s.asset("raster1_down.png")
 	back, plain, scroll, merge, rotated, off, bars := s.surface(640, 400), s.surface(640, 400), s.surface(640, 400), s.surface(640, 400), s.surface(640, 400), s.surface(640, 400), s.surface(768, 540)
-	r1, r2 := s.ring(plain, fontW, 64, 34, 32, s.data.Strings["text1"], 6), s.ring(plain, fontW, 64, 34, 32, s.data.Strings["text2"], 6)
-	r3, r4 := s.ring(scroll, fontP, 64, 34, 32, s.data.Strings["text3"], 6), s.ring(scroll, fontP, 64, 34, 32, s.data.Strings["text4"], 6)
-	grid := scrolling.BitmapGrid{Image: fontC, Width: 44, Height: 44, Columns: fontC.Bounds().Dx() / 44, ColumnSpan: float64(fontC.Bounds().Dx()) / 44, First: 32, Filter: ebiten.FilterLinear}
-	text := []rune(s.data.Strings["text5"])
-	letters := make([]rune, 24)
-	xs := make([]float64, 24)
-	for i := range letters {
-		letters[i] = text[i]
-		xs[i] = float64((24 + i) * 44)
+	r1, r2 := s.ring(plain, fontW, "cuddly-reset", s.data.Strings["text1"], 6), s.ring(plain, fontW, "cuddly-reset", s.data.Strings["text2"], 6)
+	r3, r4 := s.ring(scroll, fontP, "cuddly-reset", s.data.Strings["text3"], 6), s.ring(scroll, fontP, "cuddly-reset", s.data.Strings["text4"], 6)
+	grid := s.bitmap(fontC, "cuddly-reset-letters", ebiten.FilterLinear)
+	slotConfig := presets.CuddlyResetSlots(grid, s.data.Strings["text5"])
+	letters, err := scrolling.New(scrolling.Config{Slots: &slotConfig})
+	if err != nil {
+		s.err = err
+		return
 	}
+	s.closeEffects = append(s.closeEffects, letters.Close)
 	phases := make([]float64, 16)
 	for i := range phases {
 		phases[i] = float64(i) * .25
 	}
-	part, time, index, next := 1, 0, 12.0, 24
-	offset, yy, fade, u, oldX, oldY := 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+	part, time, index := 1, 0, 12.0
+	offset, yy, fade := 0.0, 0.0, 0.0
 	s.music("", false)
 	drawBack := func() {
 		angle := 2 * math.Pi / 384 * index
@@ -138,24 +139,11 @@ func (s *Scene) reset() {
 			drawBars()
 			s.transform(s.Canvas, bars, 0, 40, 1, .85, 0, 0, 0, 1, ebiten.BlendSourceOver)
 			s.draw(s.Canvas, back, 64, 70)
-			for i := range letters {
-				y := 250 + math.Sin(u-float64(i)/2)*50
-				xs[i] -= 3
-				angle := math.Atan2(y-oldY, xs[i]-oldX)
-				if region, ok := grid.Region(letters[i]); ok {
-					op := ebiten.DrawImageOptions{Filter: ebiten.FilterLinear}
-					op.GeoM.Rotate(angle)
-					op.GeoM.Translate(xs[i], y)
-					composite.DrawRegion(rotated, fontC, region, &op)
-				}
-				oldX, oldY = xs[i], y
-				if xs[i] < -88 {
-					xs[i] += 24 * 44
-					letters[i] = text[next]
-					next = (next + 1) % len(text)
-				}
+			if err := letters.Update(kit.Frame{}); err != nil {
+				s.err = err
+				return
 			}
-			u += .05
+			letters.Draw(rotated)
 			s.draw(merge, rotated, 0, 0)
 			s.transform(merge, off, 0, 0, 1, 1, 0, 0, 0, 1, ebiten.BlendSourceAtop)
 			s.draw(s.Canvas, merge, 64, 0)

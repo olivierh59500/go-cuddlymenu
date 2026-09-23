@@ -2,6 +2,7 @@ package menu
 
 import (
 	"bytes"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"image"
 	"image/color"
 	"image/draw"
@@ -108,7 +109,7 @@ func makePlaceholderCarebears() *ebiten.Image {
 }
 
 func makePlaceholderScrollFont() *ebiten.Image {
-	totalTiles := len(scrollerCharWidth) * 3
+	totalTiles := len(presets.CuddlyChromeAlphabet().Widths) * 3
 	columns := 16
 	rows := int(math.Ceil(float64(totalTiles) / float64(columns)))
 	w := columns * scrollTileW

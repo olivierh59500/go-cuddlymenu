@@ -17,7 +17,7 @@ func (s *Scene) digi() {
 	stage := s.surface(640, 400)
 	s.filters[stage] = ebiten.FilterNearest
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	r := s.ring(stage, font, 64, 54, 32, s.data.Strings["text"], 8)
+	r := s.ring(stage, font, "cuddly-digi", s.data.Strings["text"], 8)
 	var letters []*ebiten.Image
 	for _, ch := range "HAEY" {
 		letters = append(letters, s.asset(string(ch)+".png"))
@@ -121,7 +121,7 @@ func (s *Scene) led() {
 	gradient := ledGradient()
 	s.surfaces = append(s.surfaces, gradient)
 	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 6, Spatial: .08, Speed: .2}}}
-	r := s.ring(led, font, 128, 108, 32, s.data.Strings["text"], 16)
+	r := s.ring(led, font, "cuddly-led", s.data.Strings["text"], 16)
 	var letters []*ebiten.Image
 	for _, name := range []string{"c", "a", "r", "e", "b", "e", "a", "r", "s"} {
 		letters = append(letters, s.asset(name+".png"))
