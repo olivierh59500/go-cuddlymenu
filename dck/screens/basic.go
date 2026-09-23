@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
@@ -96,11 +97,17 @@ func (s *Scene) bigSprite() {
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[starCanvas] = ebiten.FilterNearest
 	r1, r2 := s.ring(a, fontIn, "cuddly-bigsprite", s.data.Strings["text"], 8), s.ring(b, fontOut, "cuddly-bigsprite", s.data.Strings["text"], 8)
-	field, err := sprites.NewStreaks(sprites.StreakConfig{Width: 320, Height: 200, Count: 80, Speed: 4, Focal: 100, CenterX: 160, CenterY: 100, Color: color.RGBA{170, 170, 170, 255}, Random: s.rnd})
+	fieldConfig, err := sprites.StreakField(sprites.StreakConfig{Width: 320, Height: 200, Count: 80, Speed: 4, Focal: 100, CenterX: 160, CenterY: 100, Color: color.RGBA{170, 170, 170, 255}, Random: s.rnd})
 	if err != nil {
 		s.err = err
 		return
 	}
+	field, err := sprites.NewProjectedField(fieldConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, field.Close)
 	// The word is stored in reverse order by the reference choreography.
 	var letters []*ebiten.Image
 	for _, name := range []string{"s", "r", "a", "e", "b", "e", "r", "a", "c", "e", "h", "t"} {
@@ -125,8 +132,11 @@ func (s *Scene) bigSprite() {
 		if rasterY <= -177 {
 			rasterY = 0
 		}
-		field.Step()
-		field.DrawAt(starCanvas, 0, 0)
+		if err := field.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
+		}
+		field.Draw(starCanvas)
 		s.transform(stage, starCanvas, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		phase += .008
 		position := orbit.At(phase)
