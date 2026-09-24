@@ -175,6 +175,12 @@ func (s *Scene) fullscreen() {
 		s.err = err
 		return
 	}
+	backgroundScroll := &composite.BackgroundLayer{
+		Renderer:  decor,
+		Image:     background,
+		Pose:      composite.BackgroundPose{Y: 52},
+		VelocityX: -4 * TicksPerSecond,
+	}
 	var rs []*scrolling.Ring
 	for i := 0; i < 7; i++ {
 		rs = append(rs, s.ring(scroll, font, "cuddly-fullscreen", s.data.Strings[fmt.Sprintf("text%d", i)], 6))
@@ -184,17 +190,17 @@ func (s *Scene) fullscreen() {
 		letters = append(letters, s.asset(name+".png"))
 	}
 	ys := []float64{-28, 52, 132, 212, 292, 372, 452}
-	backX, upd, loop := 0.0, 0.0, 0
+	upd, loop := 0.0, 0
 	weave := motion.DefaultWeave(motion.Point{X: 380, Y: 277}, motion.Point{X: 380, Y: 125.5})
 	s.render = func() {
 		clearBlack(s.Canvas)
 		scroll.Clear()
 		off.Clear()
-		decor.DrawAt(s.Canvas, background, backX, 52)
-		backX -= 4
-		if backX <= -16 {
-			backX = 0
+		s.err = backgroundScroll.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond})
+		if s.err != nil {
+			return
 		}
+		backgroundScroll.Draw(s.Canvas)
 		for i, r := range rs {
 			r.Step()
 			r.DrawAt(scroll, 0, ys[i])
