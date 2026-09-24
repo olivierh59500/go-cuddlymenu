@@ -97,6 +97,15 @@ func (s *Scene) bigSprite() {
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[starCanvas] = ebiten.FilterNearest
 	r1, r2 := s.ring(a, fontIn, "cuddly-bigsprite", s.data.Strings["text"], 8), s.ring(b, fontOut, "cuddly-bigsprite", s.data.Strings["text"], 8)
+	rasterFill, err := composite.NewRasterOverlay(composite.RasterOverlayConfig{
+		Image: raster, ScaleX: 85, ScaleY: 1, Alpha: 1,
+		VelocityY: -2, WrapY: &composite.RasterWrap{Boundary: -177, Restart: 0, Inclusive: true},
+		Filter: s.filters[a], Blend: ebiten.BlendSourceAtop,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	fieldConfig, err := sprites.StreakField(sprites.StreakConfig{Width: 320, Height: 200, Count: 80, Speed: 4, Focal: 100, CenterX: 160, CenterY: 100, Color: color.RGBA{170, 170, 170, 255}, Random: s.rnd})
 	if err != nil {
 		s.err = err
@@ -114,7 +123,7 @@ func (s *Scene) bigSprite() {
 		letters = append(letters, s.asset(name+".png"))
 	}
 	// Start the movement cycle at the authored nine-step phase offset.
-	phase, flip, flipStep, upd, rasterY := 9.0, 1.0, -.02, 0.0, 0.0
+	phase, flip, flipStep, upd := 9.0, 1.0, -.02, 0.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 320, Y: 200}, motion.Point{X: 160, Y: 400 / 3.7})
 	weave := motion.DefaultWeave(motion.Point{X: 308, Y: 190}, motion.Point{X: 308, Y: 500.0 / 6})
 	s.render = func() {
@@ -127,11 +136,8 @@ func (s *Scene) bigSprite() {
 		r2.Step()
 		r1.DrawAt(a, 0, 0)
 		r2.DrawAt(b, 0, 0)
-		s.transform(a, raster, 0, rasterY, 85, 1, 0, 0, 0, 1, ebiten.BlendSourceAtop)
-		rasterY -= 2
-		if rasterY <= -177 {
-			rasterY = 0
-		}
+		rasterFill.Draw(a)
+		rasterFill.Step()
 		if err := field.Update(kit.Frame{}); err != nil {
 			s.err = err
 			return

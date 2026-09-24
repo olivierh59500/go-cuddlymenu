@@ -36,6 +36,10 @@ tables, and `loader.json` contains loading-screen captions and counters.
 The effects include configurable wave chains, profile-based distortion, sparkle
 overlays, feedback ribbons, projected rows and batched circular particles.
 Images, fonts, phases, sizes and layer order remain production parameters.
+Big Sprite colors its scrolling text with `composite.RasterOverlay` using
+source-atop blending; Starwars uses the same effect with source-in blending and
+a different wrap rule. Their 15-second captures match all 900 original frames
+per screen.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.

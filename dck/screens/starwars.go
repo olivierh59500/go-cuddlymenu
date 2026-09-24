@@ -86,7 +86,16 @@ func (s *Scene) starwars() {
 		return
 	}
 	s.closeEffects = append(s.closeEffects, crawl.Close)
-	depth, rotation, fade, rasterY := 0.0, 180.0, 0.0, 0.0
+	depth, rotation, fade := 0.0, 180.0, 0.0
+	rasterFill, err := composite.NewRasterOverlay(composite.RasterOverlayConfig{
+		Image: raster, ScaleX: 320, ScaleY: 1, Alpha: 1,
+		VelocityY: -.5, WrapY: &composite.RasterWrap{Boundary: -72, Restart: 0},
+		Filter: ebiten.FilterNearest, Blend: ebiten.BlendSourceIn,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	flash, waveIndex, spriteIndex := 0, 20, 0
 	s.render = func() {
 		clearBlack(s.Canvas)
@@ -119,10 +128,7 @@ func (s *Scene) starwars() {
 			return
 		}
 		crawl.Draw(main)
-		rasterY -= .5
-		if rasterY < -72 {
-			rasterY = 0
-		}
+		rasterFill.Step()
 		waveIndex++
 		if waveIndex > len(wave)-80 {
 			waveIndex = 20
@@ -133,7 +139,7 @@ func (s *Scene) starwars() {
 			s.part(masked, b, composite.Region{X: float64(i * 16), Width: 16, Height: 26}, float64(i*16), wave[waveIndex+i]+26, 1, 1)
 		}
 		s.filters[masked] = ebiten.FilterNearest
-		s.transform(masked, raster, 0, rasterY, 320, 1, 0, 0, 0, 1, ebiten.BlendSourceIn)
+		rasterFill.Draw(masked)
 		s.filters[masked] = ebiten.FilterLinear
 		s.draw(main, masked, 0, 0)
 		r1.Step()
