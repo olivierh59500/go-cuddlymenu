@@ -9,6 +9,7 @@ import (
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
@@ -142,16 +143,24 @@ func (s *Scene) led() {
 		s.err = err
 		return
 	}
-	varianceMotion, err := motion.NewBounceBank(motion.BounceBankConfig{
-		Start: []float64{75}, Velocity: []float64{-1}, Min: 20, Max: 75,
-		Inclusive: true, Clamp: true,
+	formation, err := motion.NewHarmonicFormation(presets.CuddlyLEDLetterFormationConfig())
+	if err != nil {
+		s.err = err
+		return
+	}
+	letterGroup, err := sprites.NewGroup(sprites.GroupConfig{
+		Frames: letters, Count: len(letters), FrameStride: 1, Harmonic: formation,
+		HarmonicClockStart: [2]float64{0, 1.2}, HarmonicClockStep: [2]float64{0, 1.2},
+		HarmonicEnvelope: &motion.BounceBankConfig{
+			Start: []float64{75}, Velocity: []float64{-1}, Min: 20, Max: 75,
+			Inclusive: true, Clamp: true,
+		},
 	})
 	if err != nil {
 		s.err = err
 		return
 	}
 	bounce, ledBounce := 0.0, 0.0
-	phases := []float64{0, 2, 4, 6, 8, 6, 4, 2, 0}
 	load := func() {
 		warped.Clear()
 		s.draw(off, tiled, 0, tileMotion.At(0))
@@ -169,11 +178,11 @@ func (s *Scene) led() {
 		s.transform(warped, gradient, 0, gradientMotion.At(0), 1, 1, 0, 0, 0, .8, ebiten.BlendSourceOver)
 		gradientMotion.Step()
 		s.transform(stage, warped, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
-		for i, img := range letters {
-			phases[i] += 1.2
-			s.draw(stage, img, float64(32+64*i), 75-varianceMotion.At(0)*math.Cos(phases[i]/10))
+		letterGroup.Draw(stage)
+		if err := letterGroup.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		varianceMotion.Step()
 		s.draw(s.Canvas, stage, 64, 70)
 		led.Clear()
 		s.draw(led, bubbles, 0, 0)

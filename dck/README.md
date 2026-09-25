@@ -46,6 +46,9 @@ pixel for pixel.
 LED's background and gradient also use DCK's `motion.WrapBank`; ten
 checkpoints, including the pre-render and both wrap boundaries, match the
 previous screen pixel for pixel.
+Its nine letters now use `motion.HarmonicFormation` through `sprites.Group`.
+The authored phase table and a bouncing amplitude remain editable DCK
+parameters, and the group keeps the original draw-before-step timing.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
