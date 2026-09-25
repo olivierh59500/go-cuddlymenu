@@ -69,7 +69,14 @@ func (s *Scene) megaScroller() {
 	}
 	r := s.ring(merge, font, "cuddly-megascroller", s.data.Strings["text"], 10)
 	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterNearest, Waves: []composite.StripWave{{Amplitude: 30, Spatial: .03, Speed: -.05}, {Amplitude: 30, Spatial: .01, Speed: .08}}}
-	y, dy := 45.0, -2.0
+	verticalMotion, err := motion.NewBounceBank(motion.BounceBankConfig{
+		Start: []float64{45}, Velocity: []float64{-2}, Min: -70, Max: 20,
+		Inclusive: true, Directional: true, AllowOutsideStart: true,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		clearBlack(stage)
@@ -78,15 +85,9 @@ func (s *Scene) megaScroller() {
 		wave.Advance()
 		r.Step()
 		r.DrawAt(merge, 0, 0)
-		y += dy
-		if y >= 20 {
-			dy = -2
-		}
-		if y <= -70 {
-			dy = 2
-		}
+		verticalMotion.Step()
 		s.transform(merge, mask, 0, 0, 1, 1, 0, 0, 0, 1, ebiten.BlendSourceAtop)
-		s.draw(stage, merge, 0, y)
+		s.draw(stage, merge, 0, verticalMotion.At(0))
 		s.part(s.Canvas, stage, composite.Region{Width: 320, Height: 200}, 64, 70, 2, 2)
 	}
 }

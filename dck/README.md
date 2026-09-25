@@ -52,6 +52,9 @@ parameters, and the group keeps the original draw-before-step timing.
 Big Sprite and Fullscreen also use `sprites.Group` for their phase-spaced
 `motion.Weave` letters. Digi's group now owns its phase step. Fifteen captures
 across the three screens match their previous rendered frames pixel for pixel.
+Mega Scroller's masked text surface uses a directional `motion.BounceBank` with
+an offscreen entrance; eleven captures around its entry and rebound match the
+previous frames pixel for pixel.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
