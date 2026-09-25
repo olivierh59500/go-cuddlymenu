@@ -126,16 +126,29 @@ func (s *Scene) led() {
 	for _, name := range []string{"c", "a", "r", "e", "b", "e", "a", "r", "s"} {
 		letters = append(letters, s.asset(name+".png"))
 	}
-	y, bounce, ledBounce, gradientY := 0.0, 0.0, 0.0, 0.0
+	tileMotion, err := motion.NewWrapBank(motion.WrapBankConfig{
+		Start: []float64{0}, Velocity: []float64{-2},
+		Lower: &motion.WrapLimit{Boundary: -33, Restart: 0, Inclusive: true},
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
+	gradientMotion, err := motion.NewWrapBank(motion.WrapBankConfig{
+		Start: []float64{0}, Velocity: []float64{-1},
+		Lower: &motion.WrapLimit{Boundary: -1400, Restart: 0, Inclusive: true},
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
+	bounce, ledBounce := 0.0, 0.0
 	variance, delta := 75.0, -1.0
 	phases := []float64{0, 2, 4, 6, 8, 6, 4, 2, 0}
 	load := func() {
 		warped.Clear()
-		s.draw(off, tiled, 0, y)
-		y -= 2
-		if y <= -33 {
-			y = 0
-		}
+		s.draw(off, tiled, 0, tileMotion.At(0))
+		tileMotion.Step()
 		wave.DrawAt(warped, off, -32, 0)
 		wave.Advance()
 		s.transform(warped, the, 160, 95-math.Abs(math.Sin(bounce)*80), .5, .5, 0, float64(the.Bounds().Dx()/2), float64(the.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
@@ -146,11 +159,8 @@ func (s *Scene) led() {
 		clearBlack(s.Canvas)
 		stage.Clear()
 		load()
-		s.transform(warped, gradient, 0, gradientY, 1, 1, 0, 0, 0, .8, ebiten.BlendSourceOver)
-		gradientY--
-		if gradientY <= -1400 {
-			gradientY = 0
-		}
+		s.transform(warped, gradient, 0, gradientMotion.At(0), 1, 1, 0, 0, 0, .8, ebiten.BlendSourceOver)
+		gradientMotion.Step()
 		s.transform(stage, warped, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		for i, img := range letters {
 			phases[i] += 1.2

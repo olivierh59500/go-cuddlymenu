@@ -43,6 +43,9 @@ per screen.
 Ehhh's seven moving raster images now use one `sprites.Train` with a
 phase-spaced cosine wave. Five checkpoints match the previous Ehhh renderer
 pixel for pixel.
+LED's background and gradient also use DCK's `motion.WrapBank`; ten
+checkpoints, including the pre-render and both wrap boundaries, match the
+previous screen pixel for pixel.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
