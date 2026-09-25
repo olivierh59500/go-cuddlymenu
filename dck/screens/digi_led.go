@@ -23,7 +23,11 @@ func (s *Scene) digi() {
 	for _, ch := range "HAEY" {
 		letters = append(letters, s.asset(string(ch)+".png"))
 	}
-	curve := digiCurve()
+	curve, err := motion.CompileWaveProgram(presets.CuddlyDigiWaveProgram()...)
+	if err != nil {
+		s.err = err
+		return
+	}
 	counter := 0
 	weave := motion.DefaultWeave(motion.Point{X: 306, Y: 207}, motion.Point{X: 306, Y: 90.5})
 	group, err := sprites.NewGroup(sprites.GroupConfig{
@@ -61,53 +65,6 @@ func (s *Scene) digi() {
 		group.Draw(stage)
 		s.draw(s.Canvas, stage, 64, 70)
 	}
-}
-
-// digiCurve retains the source's overlapping writes between table sections.
-func digiCurve() []float64 {
-	var table []float64
-	put := func(i int, v float64) {
-		for len(table) <= i {
-			table = append(table, 0)
-		}
-		table[i] = v
-	}
-	for i := 0; i < 252; i++ {
-		put(i, 40*math.Sin(float64(i)*.05))
-	}
-	base := len(table)
-	for i := 0; i < 30; i++ {
-		put(base+i, 40*math.Sin(float64(i)*.05))
-	}
-	for i := 30; i < 80; i++ {
-		put(base+i, 40)
-	}
-	for i := 30; i < 90; i++ {
-		put(base+50+i, 40*math.Sin(float64(i)*.05))
-	}
-	for i := 88; i < 150; i++ {
-		put(base+50+i, -40)
-	}
-	for i := 90; i < 149; i++ {
-		put(base+110+i, 40*math.Sin(9.6+float64(i)*.02))
-	}
-	for _, segment := range []struct {
-		count int
-		value func(float64) float64
-	}{
-		{252, func(i float64) float64 { return 40 * math.Sin(i*.05) }}, {504, func(i float64) float64 { return 40 * math.Sin(i*.025) }}, {315, func(i float64) float64 { return 40*math.Sin(i*.02) + 5*math.Sin(i*.5) }}, {630, func(i float64) float64 { return 40 * math.Sin(i*.01) }}, {628, func(i float64) float64 {
-			v := 40 * math.Sin(i*.01)
-			if i < 100 || i >= 200 && i < 300 {
-				v += 2 * math.Sin(i)
-			}
-			return v
-		}}, {200, func(i float64) float64 { return 40 * math.Sin(i*.05) }},
-	} {
-		for i := 0; i < segment.count; i++ {
-			table = append(table, segment.value(float64(i)))
-		}
-	}
-	return table
 }
 
 func (s *Scene) led() {

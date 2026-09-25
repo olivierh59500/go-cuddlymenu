@@ -30,31 +30,10 @@ func (s *Scene) intro() {
 		return
 	}
 	s.closeEffects = append(s.closeEffects, chain.Close)
-	curve := make([]float64, 252)
-	for i := 0; i < 252; i++ {
-		curve = append(curve, 80*math.Sin(float64(i)*.05))
-	}
-	for repeat := 0; repeat < 3; repeat++ {
-		part := make([]float64, 259)
-		for i := 0; i < 30; i++ {
-			part[i] = 200 * math.Sin(float64(i)*.05)
-		}
-		for i := 30; i < 80; i++ {
-			part[i] = 200
-		}
-		for i := 30; i < 90; i++ {
-			part[50+i] = 200 * math.Sin(float64(i)*.05)
-		}
-		for i := 88; i < 150; i++ {
-			part[50+i] = -200
-		}
-		for i := 90; i < 149; i++ {
-			part[110+i] = 220 * math.Sin(9.6+float64(i)*.02)
-		}
-		curve = append(curve, part...)
-	}
-	for i := 0; i < 252; i++ {
-		curve = append(curve, 40*math.Sin(float64(i)*.05))
+	curve, err := motion.CompileWaveProgram(presets.CuddlyIntroWaveProgram()...)
+	if err != nil {
+		s.err = err
+		return
 	}
 	px, py := s.data.Numbers["starposX"], s.data.Numbers["starposY"]
 	profile := composite.ProfileStrips{Offsets: curve, Speed: 2, Thickness: 1, Filter: ebiten.FilterNearest}

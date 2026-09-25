@@ -2,7 +2,6 @@ package screens
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -32,19 +31,10 @@ func (s *Scene) ehh() {
 		s.err = err
 		return
 	}
-	curve := make([]float64, 250)
-	for _, v := range digiCurve()[:763] {
-		curve = append(curve, v/2)
-	}
-	for i := 0; i < 630; i++ {
-		curve = append(curve, 20*math.Sin(float64(i)*.01))
-	}
-	for i := 0; i < 628; i++ {
-		v := 20 * math.Sin(float64(i)*.01)
-		if i < 100 || i >= 200 && i < 300 {
-			v += 2 * math.Sin(float64(i))
-		}
-		curve = append(curve, v)
+	curve, err := presets.CuddlyEhhhProfile()
+	if err != nil {
+		s.err = err
+		return
 	}
 	rollBounce, err := motion.NewWaveClock(presets.RectifiedSine(0, 158, 0))
 	if err != nil {

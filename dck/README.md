@@ -96,6 +96,10 @@ for pixel, including Ehhh's later control changes.
 Big Sprite's front/back emblem now uses `sprites.AxisFlip` with the original
 threshold, signed scale and face angle. Sixteen checkpoints around the face
 changes and bounce boundaries remain pixel-identical.
+The Digi, Ehhh and introduction row-profile tables now come from editable DCK
+wave programs. Their overlapping writes, zero lead-ins and source-phase offsets
+are compiled once at setup. Thirty checkpoints, including late wraps,
+remain pixel-identical.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
