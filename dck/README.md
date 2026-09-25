@@ -64,6 +64,9 @@ The paired inner and outer fonts of 3D DOC now use `composite.RowWarp` with
 fractional source-column sampling. Seven captures across intro and main screen
 match the previous images pixel for pixel; the checkerboard and ball train keep
 their independent DCK controllers.
+Its `timeline.IntroHandoff` retains the last intro frame and starts music on
+the first main tick. Eleven captures around that boundary and during the main
+screen match the previous renderer pixel for pixel.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.

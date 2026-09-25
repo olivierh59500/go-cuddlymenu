@@ -8,6 +8,7 @@ import (
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/effects"
 	"github.com/olivierh59500/democonstructionkit/presets"
+	"github.com/olivierh59500/democonstructionkit/timeline"
 )
 
 func (s *Scene) doc() {
@@ -47,22 +48,29 @@ func (s *Scene) doc() {
 		s.err = err
 		return
 	}
-	jump, mainTick := false, 0
+	handoff, err := timeline.NewIntroHandoff(timeline.IntroHandoffConfig{
+		FadeStart: 1, FadeMax: 1, Cue: timeline.IntroCueOnFirstMainTick,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
+	mainTick := 0
 	s.music("", false)
 	s.render = func() {
 		clearBlack(s.Canvas)
-		if !jump {
+		if !handoff.Main() {
 			intro.Clear()
 			r1.Step()
 			r1.DrawAt(intro, 0, 0)
-			if r1.NextRune() == '\\' {
-				jump = true
-			}
+			handoff.Step(r1.NextRune() == '\\')
 			s.draw(s.Canvas, intro, 64, 62)
 			return
 		}
-		if mainTick == 0 {
+		handoff.Step(false)
+		if handoff.CueReady() {
 			s.music("Cuddly - 3D doc.ym", true)
+			handoff.MarkCue()
 		}
 		stage.Clear()
 		s.transform(s.Canvas, background, 0, 0, 77, 1, 0, 0, 0, 1, ebiten.BlendSourceOver)
