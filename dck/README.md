@@ -55,6 +55,11 @@ across the three screens match their previous rendered frames pixel for pixel.
 Mega Scroller's masked text surface uses a directional `motion.BounceBank` with
 an offscreen entrance; eleven captures around its entry and rebound match the
 previous frames pixel for pixel.
+Fullscreen's seven recycled bitmap text lanes now use the shared
+`scrolling.Config.RingLanes` transport, including its 128-tick vertical cadence.
+Big Sprite uses the same ring-bank controller with two independent fonts and
+draws each lane into its own mask. Twelve captures match the previous images;
+the lane-wrap recurrence is also checked over 6,000 updates in DCK.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.

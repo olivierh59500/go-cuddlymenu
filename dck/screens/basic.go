@@ -97,7 +97,17 @@ func (s *Scene) bigSprite() {
 	stage, a, b, starCanvas := s.surface(640, 400), s.surface(568, 41), s.surface(568, 41), s.surface(320, 200)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[starCanvas] = ebiten.FilterNearest
-	r1, r2 := s.ring(a, fontIn, "cuddly-bigsprite", s.data.Strings["text"], 8), s.ring(b, fontOut, "cuddly-bigsprite", s.data.Strings["text"], 8)
+	dualScroll, err := scrolling.NewRingLanes(scrolling.RingLanesConfig{
+		Rings: []scrolling.RingConfig{
+			{Text: s.data.Strings["text"], Font: s.bitmap(fontIn, "cuddly-bigsprite", s.filters[a]), Viewport: float64(a.Bounds().Dx()), Speed: 8, Controls: true},
+			{Text: s.data.Strings["text"], Font: s.bitmap(fontOut, "cuddly-bigsprite", s.filters[b]), Viewport: float64(b.Bounds().Dx()), Speed: 8, Controls: true},
+		},
+		Y: []float64{0, 0},
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	rasterFill, err := composite.NewRasterOverlay(composite.RasterOverlayConfig{
 		Image: raster, ScaleX: 85, ScaleY: 1, Alpha: 1,
 		VelocityY: -2, WrapY: &composite.RasterWrap{Boundary: -177, Restart: 0, Inclusive: true},
@@ -141,10 +151,9 @@ func (s *Scene) bigSprite() {
 		a.Clear()
 		b.Clear()
 		starCanvas.Clear()
-		r1.Step()
-		r2.Step()
-		r1.DrawAt(a, 0, 0)
-		r2.DrawAt(b, 0, 0)
+		dualScroll.Step()
+		dualScroll.DrawLaneAt(0, a, 0, 0)
+		dualScroll.DrawLaneAt(1, b, 0, 0)
 		rasterFill.Draw(a)
 		rasterFill.Step()
 		if err := field.Update(kit.Frame{}); err != nil {
@@ -196,16 +205,28 @@ func (s *Scene) fullscreen() {
 		Pose:      composite.BackgroundPose{Y: 52},
 		VelocityX: -4 * TicksPerSecond,
 	}
-	var rs []*scrolling.Ring
+	fontGrid := s.bitmap(font, "cuddly-fullscreen", s.filters[scroll])
+	rings := make([]scrolling.RingConfig, 7)
 	for i := 0; i < 7; i++ {
-		rs = append(rs, s.ring(scroll, font, "cuddly-fullscreen", s.data.Strings[fmt.Sprintf("text%d", i)], 6))
+		rings[i] = scrolling.RingConfig{
+			Text: s.data.Strings[fmt.Sprintf("text%d", i)], Font: fontGrid,
+			Viewport: float64(scroll.Bounds().Dx()), Speed: 6, Controls: true,
+		}
+	}
+	laneConfig := scrolling.RingLanesConfig{
+		Rings: rings, Y: []float64{-28, 52, 132, 212, 292, 372, 452},
+		ShiftEvery: 128, ShiftFirst: 130, ShiftVelocity: []float64{2},
+		ShiftUpper: &motion.WrapLimit{Boundary: 540, Restart: -28, Inclusive: true},
+	}
+	lanes, err := scrolling.New(scrolling.Config{RingLanes: &laneConfig})
+	if err != nil {
+		s.err = err
+		return
 	}
 	var letters []*ebiten.Image
 	for _, name := range []string{"N", "O", "I", "N", "U", "E", "H", "T"} {
 		letters = append(letters, s.asset(name+".png"))
 	}
-	ys := []float64{-28, 52, 132, 212, 292, 372, 452}
-	loop := 0
 	weave := motion.DefaultWeave(motion.Point{X: 380, Y: 277}, motion.Point{X: 380, Y: 125.5})
 	letterGroup, err := sprites.NewGroup(sprites.GroupConfig{
 		Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave,
@@ -224,10 +245,11 @@ func (s *Scene) fullscreen() {
 			return
 		}
 		backgroundScroll.Draw(s.Canvas)
-		for i, r := range rs {
-			r.Step()
-			r.DrawAt(scroll, 0, ys[i])
+		if err := lanes.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
+		lanes.Draw(scroll)
 		s.draw(s.Canvas, scroll, 0, 0)
 		letterGroup.Draw(s.Canvas)
 		if err := letterGroup.Update(kit.Frame{}); err != nil {
@@ -238,16 +260,6 @@ func (s *Scene) fullscreen() {
 		s.transform(off, logo, 95, 5, 1.3, 1.3, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		s.transform(off, raster, 0, 0, 1, 1.2, 0, 0, 0, 1, ebiten.BlendSourceAtop)
 		s.draw(s.Canvas, off, 0, 0)
-		if loop >= 128 {
-			for i := range ys {
-				ys[i] += 2
-				if ys[i] >= 540 {
-					ys[i] = -28
-				}
-			}
-			loop = 0
-		}
-		loop++
 	}
 }
 
