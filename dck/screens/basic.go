@@ -134,8 +134,17 @@ func (s *Scene) bigSprite() {
 		letters = append(letters, s.asset(name+".png"))
 	}
 	// Start the movement cycle at the authored nine-step phase offset.
-	phase, flip, flipStep := 9.0, 1.0, -.02
+	phase := 9.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 320, Y: 200}, motion.Point{X: 160, Y: 400 / 3.7})
+	face, err := sprites.NewAxisFlip(sprites.AxisFlipConfig{
+		Front: front, Back: back, SwitchAt: .01, BackAngle: 180,
+		Motion: motion.BounceBankConfig{Start: []float64{1}, Velocity: []float64{-.02}, Min: -1, Max: 1, Inclusive: true, Directional: true},
+		Filter: s.filters[stage], Blend: ebiten.BlendSourceOver,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	weave := motion.DefaultWeave(motion.Point{X: 308, Y: 190}, motion.Point{X: 308, Y: 500.0 / 6})
 	letterGroup, err := sprites.NewGroup(sprites.GroupConfig{
 		Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave,
@@ -164,19 +173,8 @@ func (s *Scene) bigSprite() {
 		s.transform(stage, starCanvas, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		phase += .008
 		position := orbit.At(phase)
-		x, y := position.X, position.Y
-		img, angle := front, 0.0
-		if flip <= .01 {
-			img, angle = back, 180
-		}
-		s.transform(stage, img, x, y, 1, flip, angle, float64(img.Bounds().Dx()/2), float64(img.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
-		flip += flipStep
-		if flip <= -1 {
-			flipStep = .02
-		}
-		if flip >= 1 {
-			flipStep = -.02
-		}
+		face.DrawAt(stage, position.X, position.Y)
+		face.Step()
 		letterGroup.Draw(stage)
 		if err := letterGroup.Update(kit.Frame{}); err != nil {
 			s.err = err

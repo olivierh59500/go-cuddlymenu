@@ -93,6 +93,9 @@ Megaball text and Ehhh roller. Ehhh keeps its text-controlled tempo and cycle
 reset. Starwars uses the same `motion.Wave` form in its sampled text profile.
 Thirty-six checkpoints across the five screens match the previous images pixel
 for pixel, including Ehhh's later control changes.
+Big Sprite's front/back emblem now uses `sprites.AxisFlip` with the original
+threshold, signed scale and face angle. Sixteen checkpoints around the face
+changes and bounce boundaries remain pixel-identical.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
