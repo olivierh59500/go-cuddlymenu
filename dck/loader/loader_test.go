@@ -1,17 +1,35 @@
 package loader
 
 import (
+	"github.com/olivierh59500/democonstructionkit/timeline"
 	"math"
 	"testing"
 )
 
+func screenAtTick(t *testing.T, spec Spec, rate, tick int) *Screen {
+	t.Helper()
+	countdown, err := timeline.NewCountdown(timeline.CountdownConfig{First: spec.Sector, Second: spec.Blipps, Hold: 24, FadeLead: 42})
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock, err := newScreenClock(countdown, rate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := &Screen{spec: spec, countdown: countdown, clock: clock}
+	for i := 0; i < tick; i++ {
+		l.advance()
+	}
+	return l
+}
+
 func TestCountdownBoundaries(t *testing.T) {
-	l := &Screen{spec: Spec{Sector: 49, Blipps: 162}, rate: 60}
+	spec := Spec{Sector: 49, Blipps: 162}
 	for _, tt := range []struct {
 		tick, sector, blipps int
 		blank                bool
 	}{{0, 49, 162, false}, {48, 1, 162, false}, {49, 0, 161, false}, {234, 0, -24, false}, {235, 0, -25, true}} {
-		l.tick = tt.tick
+		l := screenAtTick(t, spec, 60, tt.tick)
 		s, b := l.Counters()
 		if s != tt.sector || b != tt.blipps || l.Blank() != tt.blank {
 			t.Fatalf("tick %d: counters %d/%d, blank %v", tt.tick, s, b, l.Blank())
@@ -21,8 +39,9 @@ func TestCountdownBoundaries(t *testing.T) {
 
 func TestLoaderDurationsAtBothRates(t *testing.T) {
 	for _, rate := range []int{50, 60} {
-		l := &Screen{spec: Spec{Sector: 49, Blipps: 162}, rate: rate}
-		for l.tick < 169 {
+		spec := Spec{Sector: 49, Blipps: 162}
+		l := screenAtTick(t, spec, rate, 0)
+		for l.clock.Tick() < 169 {
 			l.advance()
 		}
 		if l.Volume() != 1 {
@@ -40,7 +59,7 @@ func TestLoaderDurationsAtBothRates(t *testing.T) {
 		if l.Volume() > 1e-9 {
 			t.Fatal("1.5 second fade did not finish")
 		}
-		l = &Screen{spec: Spec{Sector: 49, Blipps: 162}, rate: rate, tick: 235}
+		l = screenAtTick(t, spec, rate, 235)
 		ticks := 0
 		for !l.Done() {
 			l.advance()
@@ -54,7 +73,7 @@ func TestLoaderDurationsAtBothRates(t *testing.T) {
 }
 
 func TestRateSwitchPreservesElapsedPauseAndFade(t *testing.T) {
-	l := &Screen{spec: Spec{Sector: 49, Blipps: 162}, rate: 50, tick: 235, fadeElapsed: .5}
+	l := screenAtTick(t, Spec{Sector: 49, Blipps: 162}, 50, 235)
 	for i := 0; i < 5; i++ {
 		l.advance()
 	}

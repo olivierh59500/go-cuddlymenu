@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/assets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
+	"github.com/olivierh59500/democonstructionkit/timeline"
 	media "go-cuddlymenu/assets/cuddly"
 	"go-cuddlymenu/dck/timing"
 )
@@ -17,21 +18,28 @@ import (
 const Music = "menu/resources/loader.wav"
 const Width, Height = 768, 536
 const blackSeconds, fadeSeconds = .25, 1.5
+const blackCue, fadeCue = 0, 1
 
 type Spec struct {
 	Sector, Blipps       int
 	Title1, Title2, Text string
 }
 type Screen struct {
-	Canvas                    *ebiten.Image
-	spec                      Spec
-	tick                      int
-	rate                      int
-	blackElapsed, fadeElapsed float64
-	store                     *assets.Store
-	background, text          *ebiten.Image
-	font                      scrolling.BitmapGrid
-	scroll                    *scrolling.Ring
+	Canvas           *ebiten.Image
+	spec             Spec
+	countdown        *timeline.Countdown
+	clock            *timeline.CueClock
+	store            *assets.Store
+	background, text *ebiten.Image
+	font             scrolling.BitmapGrid
+	scroll           *scrolling.Ring
+}
+
+func newScreenClock(countdown *timeline.Countdown, rate int) (*timeline.CueClock, error) {
+	return timeline.NewCueClock(timeline.CueClockConfig{Rate: rate, Windows: []timeline.CueWindow{
+		{StartTick: countdown.BlankTick(), Duration: blackSeconds, Tolerance: 1e-9},
+		{StartTick: countdown.FadeStartTick(), Duration: fadeSeconds},
+	}})
 }
 
 func New(name string) (*Screen, error) {
@@ -55,7 +63,15 @@ func NewAtRate(name string, rate int) (*Screen, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown loading screen %q", name)
 	}
-	l := &Screen{spec: spec, rate: rate, store: assets.New(media.Files), Canvas: ebiten.NewImage(Width, Height), text: ebiten.NewImage(640, 16)}
+	countdown, err := timeline.NewCountdown(timeline.CountdownConfig{First: spec.Sector, Second: spec.Blipps, Hold: 24, FadeLead: 42})
+	if err != nil {
+		return nil, err
+	}
+	clock, err := newScreenClock(countdown, rate)
+	if err != nil {
+		return nil, err
+	}
+	l := &Screen{spec: spec, countdown: countdown, clock: clock, store: assets.New(media.Files), Canvas: ebiten.NewImage(Width, Height), text: ebiten.NewImage(640, 16)}
 	load := func(name string) *ebiten.Image {
 		img, e := l.store.Texture("menu/resources/" + name)
 		if e != nil {
@@ -88,31 +104,22 @@ func NewAtRate(name string, rate int) (*Screen, error) {
 
 // Counters describe the displayed values before the source's end-of-frame decrement.
 func (l *Screen) Counters() (sector, blipps int) {
-	return max(0, l.spec.Sector-l.tick), l.spec.Blipps - max(0, l.tick-l.spec.Sector+1)
+	state := l.countdown.At(l.clock.Tick())
+	return state.First, state.Second
 }
-func (l *Screen) Blank() bool { return l.tick >= l.spec.Sector+l.spec.Blipps+24 }
-func (l *Screen) Done() bool  { return l.Blank() && l.blackElapsed+1e-9 >= blackSeconds }
+func (l *Screen) Blank() bool { return l.countdown.At(l.clock.Tick()).Blank }
+func (l *Screen) Done() bool  { return l.Blank() && l.clock.Done(blackCue) }
 func (l *Screen) Volume() float64 {
-	return max(0, 1-l.fadeElapsed/fadeSeconds)
+	return max(0, 1-l.clock.Elapsed(fadeCue)/fadeSeconds)
 }
 func (l *Screen) SetTickRate(rate int) error {
 	rate, err := timing.Normalize(rate)
 	if err != nil {
 		return err
 	}
-	l.rate = rate
-	return nil
+	return l.clock.SetRate(rate)
 }
-func (l *Screen) advance() {
-	delta := 1 / float64(l.rate)
-	if l.Blank() {
-		l.blackElapsed += delta
-	}
-	if l.tick >= l.spec.Sector+l.spec.Blipps-42 {
-		l.fadeElapsed += delta
-	}
-	l.tick++
-}
+func (l *Screen) advance() { l.clock.Step() }
 func (l *Screen) Update() error {
 	if !l.Done() {
 		l.advance()

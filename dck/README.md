@@ -67,6 +67,10 @@ their independent DCK controllers.
 Its `timeline.IntroHandoff` retains the last intro frame and starts music on
 the first main tick. Eleven captures around that boundary and during the main
 screen match the previous renderer pixel for pixel.
+The loader's sector/blipp countdown, overlapping fade and black hold now use
+`timeline.Countdown` and `timeline.CueClock`. Rate changes keep elapsed fade
+time. Twelve captures across the entry, fade and blank boundaries match the
+previous loader pixel for pixel.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
