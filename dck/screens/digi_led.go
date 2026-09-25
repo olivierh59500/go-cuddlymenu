@@ -142,8 +142,15 @@ func (s *Scene) led() {
 		s.err = err
 		return
 	}
+	varianceMotion, err := motion.NewBounceBank(motion.BounceBankConfig{
+		Start: []float64{75}, Velocity: []float64{-1}, Min: 20, Max: 75,
+		Inclusive: true, Clamp: true,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	bounce, ledBounce := 0.0, 0.0
-	variance, delta := 75.0, -1.0
 	phases := []float64{0, 2, 4, 6, 8, 6, 4, 2, 0}
 	load := func() {
 		warped.Clear()
@@ -164,17 +171,9 @@ func (s *Scene) led() {
 		s.transform(stage, warped, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		for i, img := range letters {
 			phases[i] += 1.2
-			s.draw(stage, img, float64(32+64*i), 75-variance*math.Cos(phases[i]/10))
+			s.draw(stage, img, float64(32+64*i), 75-varianceMotion.At(0)*math.Cos(phases[i]/10))
 		}
-		variance += delta
-		if variance <= 20 {
-			variance = 20
-			delta = 1
-		}
-		if variance >= 75 {
-			variance = 75
-			delta = -1
-		}
+		varianceMotion.Step()
 		s.draw(s.Canvas, stage, 64, 70)
 		led.Clear()
 		s.draw(led, bubbles, 0, 0)
