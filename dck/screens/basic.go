@@ -10,6 +10,7 @@ import (
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
@@ -28,26 +29,31 @@ func (s *Scene) colorshock() {
 		s.err = err
 		return
 	}
+	orbit, err := motion.NewFormulaFormation(presets.CuddlyColorshockOrbit())
+	if err != nil {
+		s.err = err
+		return
+	}
+	tableClock, err := motion.NewWrapBank(presets.CuddlyColorshockTableClock())
+	if err != nil {
+		s.err = err
+		return
+	}
 	vbl := 0.0
-	position := 0
 	s.render = func() {
 		clearBlack(s.Canvas)
 		back.Clear()
 		scroll.Clear()
-		x := 400 - math.Sin(vbl*math.Pi/100)*400
-		y := 180 - math.Cos(vbl*math.Pi/200)*300
+		point := orbit.At(vbl, 0, 0, 0, 1)
 		hx, hy := float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2)
-		backgroundLayer.DrawAt(back, background, x-hx, y-hy)
+		backgroundLayer.DrawAt(back, background, point.X-hx, point.Y-hy)
 		s.draw(s.Canvas, back, 0, 0)
 		r.Step()
 		r.DrawAt(scroll, 0, 0)
 		s.draw(scroll, accent, 0, 0)
-		if position > 1872 {
-			position = 0
-		}
-		s.draw(s.Canvas, scroll, 90, 110+positions[position])
+		s.draw(s.Canvas, scroll, 90, 110+positions[int(tableClock.At(0))])
 		vbl += .8
-		position += 2
+		tableClock.Step()
 		s.transform(s.Canvas, logo, 370, 120, 1, 1, 0, float64(logo.Bounds().Dx()/2), float64(logo.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		s.Canvas.SubImage(image.Rect(0, 0, 768, 70)).(*ebiten.Image).Fill(color.Black)
 	}

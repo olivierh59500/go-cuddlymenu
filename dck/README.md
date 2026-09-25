@@ -100,6 +100,9 @@ The Digi, Ehhh and introduction row-profile tables now come from editable DCK
 wave programs. Their overlapping writes, zero lead-ins and source-phase offsets
 are compiled once at setup. Thirty checkpoints, including late wraps,
 remain pixel-identical.
+Colorshock II now uses a DCK formula for its two-frequency backdrop orbit and
+`motion.WrapBank` for the indexed scroll position. Ten checkpoints around the
+strict table wrap remain pixel-identical.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
