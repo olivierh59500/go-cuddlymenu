@@ -123,9 +123,17 @@ func (s *Scene) bigSprite() {
 		letters = append(letters, s.asset(name+".png"))
 	}
 	// Start the movement cycle at the authored nine-step phase offset.
-	phase, flip, flipStep, upd := 9.0, 1.0, -.02, 0.0
+	phase, flip, flipStep := 9.0, 1.0, -.02
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 320, Y: 200}, motion.Point{X: 160, Y: 400 / 3.7})
 	weave := motion.DefaultWeave(motion.Point{X: 308, Y: 190}, motion.Point{X: 308, Y: 500.0 / 6})
+	letterGroup, err := sprites.NewGroup(sprites.GroupConfig{
+		Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave,
+		PhaseStep: 1.25, Filter: s.filters[stage],
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		stage.Clear()
@@ -159,11 +167,11 @@ func (s *Scene) bigSprite() {
 		if flip >= 1 {
 			flipStep = -.02
 		}
-		for i, img := range letters {
-			position := weave.At(upd, i)
-			s.draw(stage, img, position.X, position.Y)
+		letterGroup.Draw(stage)
+		if err := letterGroup.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		upd += 1.25
 		s.draw(s.Canvas, edge, 84, 481)
 		s.transform(s.Canvas, edge, 706, 481, -1, 1, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		s.draw(s.Canvas, a, 110, 479)
@@ -196,8 +204,16 @@ func (s *Scene) fullscreen() {
 		letters = append(letters, s.asset(name+".png"))
 	}
 	ys := []float64{-28, 52, 132, 212, 292, 372, 452}
-	upd, loop := 0.0, 0
+	loop := 0
 	weave := motion.DefaultWeave(motion.Point{X: 380, Y: 277}, motion.Point{X: 380, Y: 125.5})
+	letterGroup, err := sprites.NewGroup(sprites.GroupConfig{
+		Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave,
+		PhaseStep: 1, Filter: s.filters[s.Canvas],
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		scroll.Clear()
@@ -212,11 +228,11 @@ func (s *Scene) fullscreen() {
 			r.DrawAt(scroll, 0, ys[i])
 		}
 		s.draw(s.Canvas, scroll, 0, 0)
-		for i, img := range letters {
-			position := weave.At(upd, i)
-			s.draw(s.Canvas, img, position.X, position.Y)
+		letterGroup.Draw(s.Canvas)
+		if err := letterGroup.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		upd++
 		s.Canvas.SubImage(image.Rect(0, 0, 768, 52)).(*ebiten.Image).Fill(color.Black)
 		s.transform(off, logo, 95, 5, 1.3, 1.3, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		s.transform(off, raster, 0, 0, 1, 1.2, 0, 0, 0, 1, ebiten.BlendSourceAtop)

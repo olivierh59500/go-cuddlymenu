@@ -24,9 +24,12 @@ func (s *Scene) digi() {
 		letters = append(letters, s.asset(string(ch)+".png"))
 	}
 	curve := digiCurve()
-	counter, upd := 0, 0.0
+	counter := 0
 	weave := motion.DefaultWeave(motion.Point{X: 306, Y: 207}, motion.Point{X: 306, Y: 90.5})
-	group, err := sprites.NewGroup(sprites.GroupConfig{Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave})
+	group, err := sprites.NewGroup(sprites.GroupConfig{
+		Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave,
+		Phase: -1, PhaseStep: 1, Filter: s.filters[stage],
+	})
 	if err != nil {
 		s.err = err
 		return
@@ -45,10 +48,8 @@ func (s *Scene) digi() {
 		r.Step()
 		r.DrawAt(stage, 0, 340-math.Abs(math.Sin(phase2)*40))
 		phase2 += .06
-		group.SetPhase(upd)
 		s.err = group.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond})
 		group.Draw(stage)
-		upd++
 		s.draw(s.Canvas, stage, 64, 70)
 	}
 }
