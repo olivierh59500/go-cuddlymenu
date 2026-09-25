@@ -2,7 +2,6 @@ package screens
 
 import (
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -37,18 +36,18 @@ func (s *Scene) doc() {
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	white := s.surface(1, 1)
 	white.Fill(color.White)
-	curve := make([]float64, 389)
-	for i := range curve {
-		curve[i] = 20*math.Sin(float64(i)*(7.0/180*math.Pi)) + 30*math.Cos(float64(i)*(3.0/180*math.Pi))
+	outerConfig, innerConfig := presets.CuddlyDOCRowWarps()
+	outerWarp, err := composite.NewRowWarp(outerConfig)
+	if err != nil {
+		s.err = err
+		return
 	}
-	for i := 0; i < 68; i++ {
-		curve = append(curve, 30*math.Sin(float64(i)*(8.0/180*math.Pi)))
+	innerWarp, err := composite.NewRowWarp(innerConfig)
+	if err != nil {
+		s.err = err
+		return
 	}
-	for i := 0; i < 189; i++ {
-		curve = append(curve, 30*math.Sin(float64(i)*(8.0/180*math.Pi)))
-	}
-	jump, mainTick, stripTick := false, 0, 0
-	vbl4 := 0.0
+	jump, mainTick := false, 0
 	s.music("", false)
 	s.render = func() {
 		clearBlack(s.Canvas)
@@ -76,12 +75,9 @@ func (s *Scene) doc() {
 		r3.Step()
 		r2.DrawAt(inner, 0, 0)
 		r3.DrawAt(outer, 0, 0)
-		vertical := 30 + 30*math.Cos(vbl4/20)
-		for j := 0; j < 25; j++ {
-			source := 64 + curve[(stripTick+j)%len(curve)]
-			s.part(outerRows, outer, composite.Region{X: source, Y: float64(j * 2), Width: 640, Height: 2}, 0, float64(j*2), 1, 1)
-			s.part(innerRows, inner, composite.Region{X: source, Y: float64(j * 2), Width: 640, Height: 2}, 0, float64(j*2)+vertical, 1, 1)
-		}
+		vertical := innerWarp.Vertical()
+		outerWarp.DrawInto(outerRows, outer)
+		innerWarp.DrawInto(innerRows, inner)
 		s.draw(s.Canvas, outerRows, 64, 62+vertical)
 		black := ebiten.DrawImageOptions{Blend: ebiten.BlendSourceAtop}
 		black.GeoM.Scale(640, 120)
@@ -89,8 +85,14 @@ func (s *Scene) doc() {
 		innerRows.DrawImage(white, &black)
 		s.transform(innerRows, raster, 0, 20, 75, 1, 0, 0, 0, 1, ebiten.BlendSourceAtop)
 		s.draw(s.Canvas, innerRows, 64, 62)
-		vbl4 += 1.2
-		stripTick++
+		if err := outerWarp.Step(); err != nil {
+			s.err = err
+			return
+		}
+		if err := innerWarp.Step(); err != nil {
+			s.err = err
+			return
+		}
 		if err := floor.Update(kit.Frame{}); err != nil {
 			s.err = err
 			return

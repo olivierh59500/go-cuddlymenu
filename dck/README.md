@@ -60,6 +60,10 @@ Fullscreen's seven recycled bitmap text lanes now use the shared
 Big Sprite uses the same ring-bank controller with two independent fonts and
 draws each lane into its own mask. Twelve captures match the previous images;
 the lane-wrap recurrence is also checked over 6,000 updates in DCK.
+The paired inner and outer fonts of 3D DOC now use `composite.RowWarp` with
+fractional source-column sampling. Seven captures across intro and main screen
+match the previous images pixel for pixel; the checkerboard and ball train keep
+their independent DCK controllers.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
