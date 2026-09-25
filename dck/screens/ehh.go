@@ -8,6 +8,7 @@ import (
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
@@ -45,7 +46,12 @@ func (s *Scene) ehh() {
 		}
 		curve = append(curve, v)
 	}
-	phase, bounce, bounceStep, rollX := 0.0, 0.0, 0.0, 0.0
+	rollBounce, err := motion.NewWaveClock(presets.RectifiedSine(0, 158, 0))
+	if err != nil {
+		s.err = err
+		return
+	}
+	phase, bounceStep, rollX := 0.0, 0.0, 0.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 384, Y: 270}, motion.Point{X: 135, Y: 200})
 	index := 0
 	mode := 0
@@ -75,7 +81,7 @@ func (s *Scene) ehh() {
 			s.part(s.Canvas, logo, composite.Region{Y: float64(row), Width: 767, Height: 1}, 384+curve[(index+row)%len(curve)]-383.5, float64(row)-.5, 1, 1)
 		}
 		index++
-		y := math.Abs(math.Sin(bounce) * 158)
+		y := rollBounce.At(0)
 		s.draw(s.Canvas, roller, 64, 346-y)
 		s.draw(roll, inner, rollX, 0)
 		rollX -= 2
@@ -117,12 +123,16 @@ func (s *Scene) ehh() {
 		case 4:
 			stop = true
 		}
-		if bounce >= 3.1 {
-			bounce = 0
+		if rollBounce.Phase() >= 3.1 {
+			rollBounce.Reset()
 			if stop {
 				bounceStep = 0
 			}
 		}
-		bounce += bounceStep
+		if err := rollBounce.SetStep(bounceStep); err != nil {
+			s.err = err
+			return
+		}
+		rollBounce.Step()
 	}
 }

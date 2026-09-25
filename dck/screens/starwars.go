@@ -8,6 +8,7 @@ import (
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/geometry"
+	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -25,6 +26,7 @@ func (s *Scene) starwars() {
 	}
 	grid := s.bitmap(font, "cuddly-starwars-crawl", ebiten.FilterLinear)
 	var wave []float64
+	absoluteWave := motion.Wave{Amplitude: 50, Speed: 1, Rectify: true}
 	for _, segment := range []struct {
 		n        int
 		absolute bool
@@ -34,7 +36,7 @@ func (s *Scene) starwars() {
 		for i := 0; i < segment.n; i++ {
 			v := 50*math.Sin(phase)/2 + .5
 			if segment.absolute {
-				v = 50 * math.Abs(math.Sin(phase))
+				v = absoluteWave.At(0, phase)
 			}
 			wave = append(wave, roundHalfUp(v))
 			phase += step

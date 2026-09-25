@@ -88,6 +88,11 @@ are gone from the DCK menu.
 The character/map camera now uses `motion.CameraFollow` with independent world
 bounds, viewport size and sprite anchor. Its previous three-branch X/Y camera
 calculation is removed from the DCK menu.
+The rectified `motion.WaveClock` now drives the Digi logo/text, LED logo/text,
+Megaball text and Ehhh roller. Ehhh keeps its text-controlled tempo and cycle
+reset. Starwars uses the same `motion.Wave` form in its sampled text profile.
+Thirty-six checkpoints across the five screens match the previous images pixel
+for pixel, including Ehhh's later control changes.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.

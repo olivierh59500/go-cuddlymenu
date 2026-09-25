@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
@@ -103,6 +104,11 @@ func (s *Scene) megaball() {
 	selected, blink := 8, 0
 	locations := [][2]float64{{272, 53}, {272, 45}, {272, 37}, {176, 53}, {176, 45}, {176, 37}, {80, 53}, {80, 45}, {80, 37}}
 	orbit := motion.CoupledOrbit{CenterX: 192, CenterY: 135, Radius: 60, DepthRadius: 30, PhaseStep: .00025}
+	scrollBounce, err := motion.NewWaveClock(presets.RectifiedSine(112, -66, .04))
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.input = func(in Input) {
 		if in.Up {
 			selected = (selected + 1) % 9
@@ -117,14 +123,13 @@ func (s *Scene) megaball() {
 			params[selected] = min(254, params[selected]+1)
 		}
 	}
-	phase := 0.0
 	s.render = func() {
 		clearBlack(s.Canvas)
 		half.Clear()
 		scroll.Clear()
 		r.Step()
-		r.DrawAt(scroll, 0, 112-math.Abs(math.Sin(phase)*66))
-		phase += .04
+		r.DrawAt(scroll, 0, scrollBounce.At(0))
+		scrollBounce.Step()
 		s.draw(s.Canvas, scroll, 64, 70)
 		blink = (blink + 1) % 2
 		p := locations[selected]

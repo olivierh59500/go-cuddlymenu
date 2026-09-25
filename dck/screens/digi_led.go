@@ -34,20 +34,29 @@ func (s *Scene) digi() {
 		s.err = err
 		return
 	}
-	phase1, phase2 := 0.0, 0.0
+	logoBounce, err := motion.NewWaveClock(presets.RectifiedSine(200, -160, .03))
+	if err != nil {
+		s.err = err
+		return
+	}
+	scrollBounce, err := motion.NewWaveClock(presets.RectifiedSine(340, -40, .06))
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		clearBlack(stage)
-		bounce := 200 - math.Abs(math.Sin(phase1)*160)
-		phase1 += .03
+		bounce := logoBounce.At(0)
+		logoBounce.Step()
 		for i := 0; i < 170; i++ {
 			s.part(stage, logo, composite.Region{Y: float64(i), Width: 335, Height: 1}, 320+curve[(counter+i)%len(curve)]-167.5, 160+bounce/2+float64(i)-.5, 1, 1)
 		}
 		counter++
 		s.transform(stage, union, 320, bounce+14, 1, 1, 0, float64(union.Bounds().Dx()/2), float64(union.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		r.Step()
-		r.DrawAt(stage, 0, 340-math.Abs(math.Sin(phase2)*40))
-		phase2 += .06
+		r.DrawAt(stage, 0, scrollBounce.At(0))
+		scrollBounce.Step()
 		s.err = group.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond})
 		group.Draw(stage)
 		s.draw(s.Canvas, stage, 64, 70)
@@ -161,15 +170,24 @@ func (s *Scene) led() {
 		s.err = err
 		return
 	}
-	bounce, ledBounce := 0.0, 0.0
+	theBounce, err := motion.NewWaveClock(presets.RectifiedSine(95, -80, .045))
+	if err != nil {
+		s.err = err
+		return
+	}
+	ledBounce, err := motion.NewWaveClock(presets.RectifiedSine(340, -60, .08))
+	if err != nil {
+		s.err = err
+		return
+	}
 	load := func() {
 		warped.Clear()
 		s.draw(off, tiled, 0, tileMotion.At(0))
 		tileMotion.Step()
 		wave.DrawAt(warped, off, -32, 0)
 		wave.Advance()
-		s.transform(warped, the, 160, 95-math.Abs(math.Sin(bounce)*80), .5, .5, 0, float64(the.Bounds().Dx()/2), float64(the.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
-		bounce += .045
+		s.transform(warped, the, 160, theBounce.At(0), .5, .5, 0, float64(the.Bounds().Dx()/2), float64(the.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
+		theBounce.Step()
 	}
 	load() // The reference preloads one background frame before its intro wait.
 	s.render = func() {
@@ -189,8 +207,8 @@ func (s *Scene) led() {
 		s.draw(led, bubbles, 0, 0)
 		r.Step()
 		r.DrawAt(led, 0, 2)
-		s.draw(s.Canvas, led, 64, 340-math.Abs(math.Sin(ledBounce)*60))
-		ledBounce += .08
+		s.draw(s.Canvas, led, 64, ledBounce.At(0))
+		ledBounce.Step()
 	}
 }
 
