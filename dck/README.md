@@ -81,6 +81,10 @@ and thrust frames. Its seven sprite trajectories now use the editable DCK
 `sprites.FormationCarousel`: ordered sine/cosine formulas, viewport-relative
 radii, per-sprite spacing, timed slides and pixel-snapped anchors are compiled
 once. The local `sine.go` formulas have been removed from this DCK version.
+The menu backdrop now uses `composite.CachedTileParallax`: one 800 × 432
+unmanaged surface is built at startup, and its wrapped half-speed camera
+offset is drawn once per frame. The former local tiling and offset functions
+are gone from the DCK menu.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.

@@ -30,6 +30,10 @@ func (g *Game) UseTouchControls() {
 }
 
 func (g *Game) Close() error {
+	if g.background != nil {
+		g.background.Close()
+		g.background = nil
+	}
 	if g.audioPlayer != nil {
 		g.audioPlayer.Close()
 		g.audioPlayer = nil

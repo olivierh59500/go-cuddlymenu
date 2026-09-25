@@ -12,6 +12,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	audio "github.com/olivierh59500/democonstructionkit/sound/output"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -83,7 +84,7 @@ type Game struct {
 	scrollerLevel  *TileMap
 	scrollerLength int
 
-	background   *ebiten.Image
+	background   *composite.CachedTileParallax
 	gameCanvas   *ebiten.Image
 	screenCanvas *ebiten.Image
 	crtCanvas    *ebiten.Image
@@ -132,8 +133,11 @@ func NewGame() *Game {
 	g.scrollerLevel = NewTileMap([][]int{scrollMap}, g.scrollTiles)
 	g.scrollerLength = len(scrollMap) * scrollTileW
 
-	g.background = g.buildBackground()
 	var err error
+	g.background, err = composite.NewCachedTileParallax(presets.CuddlyMenuTileParallax(g.mapTiles.Tile(1), gameWidth, gameHeight, tileSize))
+	if err != nil {
+		panic(err)
+	}
 	g.sineSprites, err = sprites.NewFormationCarousel(presets.CuddlyMenuCarousel(g.carebearTiles))
 	if err != nil {
 		panic(err)
@@ -570,7 +574,7 @@ func (g *Game) drawScene(dst *ebiten.Image, sceneX int) {
 	}
 
 	mapX, mapY, dudeX, dudeY, bounce := g.calculatePositions()
-	g.drawBackground(g.gameCanvas, mapX, mapY)
+	g.background.DrawAt(g.gameCanvas, float64(mapX), float64(mapY))
 	g.mapLevel.Draw(g.gameCanvas, mapX, mapY, 0, 0, gameWidth, gameHeight)
 	frame := g.calculateFrame()
 	g.drawDude(g.gameCanvas, dudeX, dudeY-bounce, frame)
@@ -672,41 +676,6 @@ func (g *Game) drawDude(dst *ebiten.Image, posX, posY float64, frame int) {
 	var op ebiten.DrawImageOptions
 	op.GeoM.Translate(posX, posY)
 	dst.DrawImage(sprite, &op)
-}
-
-func (g *Game) drawBackground(dst *ebiten.Image, posX, posY int) {
-	if g.background == nil {
-		return
-	}
-	if posX < 0 {
-		posX = 0
-	}
-	if posY < 0 {
-		posY = 0
-	}
-
-	deltaX := (posX / 2) % tileSize
-	deltaY := (posY / 2) % tileSize
-
-	var op ebiten.DrawImageOptions
-	op.GeoM.Translate(float64(-deltaX), float64(-deltaY))
-	op.Blend = ebiten.BlendCopy
-	dst.DrawImage(g.background, &op)
-}
-
-func (g *Game) buildBackground() *ebiten.Image {
-	bgW := gameWidth + tileSize
-	bgH := gameHeight + tileSize
-	img := newUnmanagedImage(bgW, bgH)
-	tile := g.mapTiles.Tile(1)
-	for y := 0; y < bgH; y += tileSize {
-		for x := 0; x < bgW; x += tileSize {
-			var op ebiten.DrawImageOptions
-			op.GeoM.Translate(float64(x), float64(y))
-			img.DrawImage(tile, &op)
-		}
-	}
-	return img
 }
 
 func (g *Game) drawLoading(dst *ebiten.Image, sceneX int) {
