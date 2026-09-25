@@ -5,8 +5,10 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) ehh() {
@@ -16,10 +18,18 @@ func (s *Scene) ehh() {
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	r1, r2, r3 := s.ring(a, font1, "cuddly-ehh-main", s.data.Strings["text1"], 6), s.ring(b, font2, "cuddly-ehh-middle", s.data.Strings["text2"], 6), s.ring(c, font3, "cuddly-ehh-small", s.data.Strings["text3"], 4)
 	var bars []*ebiten.Image
-	var phases []float64
 	for i := 1; i < 8; i++ {
 		bars = append(bars, s.asset(fmt.Sprintf("r%d.png", 8-i)))
-		phases = append(phases, float64(i*6))
+	}
+	barGroup, err := sprites.NewTrain(sprites.TrainConfig{
+		Images: bars, ScaleX: 77, Filter: ebiten.FilterNearest, Blend: ebiten.BlendSourceOver,
+		Y: sprites.TrainAxis{Offset: 106, Wave: &motion.Wave{
+			Amplitude: 44, Spatial: 6.0 / 20, Speed: 1.2 / 20, Phase: 6.0 / 20, Cos: true,
+		}},
+	})
+	if err != nil {
+		s.err = err
+		return
 	}
 	curve := make([]float64, 250)
 	for _, v := range digiCurve()[:763] {
@@ -49,10 +59,11 @@ func (s *Scene) ehh() {
 		position := orbit.At(phase)
 		s.transform(s.Canvas, background, position.X, position.Y, 1, 1, 0, float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		s.draw(s.Canvas, main, 0, 0)
-		for i, img := range bars {
-			s.transform(s.Canvas, img, 0, 106+44*math.Cos(phases[i]/20), 77, 1, 0, 0, 0, 1, ebiten.BlendSourceOver)
-			phases[i] += 1.2
+		if err := barGroup.Update(kit.Frame{Time: float64(s.frame)}); err != nil {
+			s.err = err
+			return
 		}
+		barGroup.Draw(s.Canvas)
 		if show2 {
 			r2.Step()
 			r2.DrawAt(b, 0, 0)

@@ -40,6 +40,9 @@ Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames
 per screen.
+Ehhh's seven moving raster images now use one `sprites.Train` with a
+phase-spaced cosine wave. Five checkpoints match the previous Ehhh renderer
+pixel for pixel.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
