@@ -3,47 +3,14 @@ package menu
 import (
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
-	"math"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"image"
 )
 
-type Animation struct {
-	Duration float64
-	Indices  []int
-	Loop     bool
-}
-
-func (a Animation) Current(t float64) int {
-	if len(a.Indices) == 0 {
-		return 0
-	}
-	if a.Duration <= 0 {
-		return a.Indices[0]
-	}
-	ct := math.Max(0, t)
-	if !a.Loop && ct >= a.Duration {
-		return a.Indices[len(a.Indices)-1]
-	}
-	if a.Loop {
-		ct = math.Mod(ct, a.Duration)
-	}
-	cp := math.Min(ct/a.Duration, 1)
-	frame := int(math.Floor(float64(len(a.Indices)) * cp))
-	if frame >= len(a.Indices) {
-		frame = len(a.Indices) - 1
-	}
-	return a.Indices[frame]
-}
-
-type TileSet struct {
-	Image   *ebiten.Image
-	Tiles   []*ebiten.Image
-	TileW   int
-	TileH   int
-	Columns int
-}
+type Animation = sprites.FrameSequence
+type TileSet = sprites.Atlas
 
 func NewTileSet(img *ebiten.Image, tileW, tileH int) *TileSet {
 	if tileW <= 0 {
@@ -52,41 +19,13 @@ func NewTileSet(img *ebiten.Image, tileW, tileH int) *TileSet {
 	if tileH <= 0 {
 		tileH = 1
 	}
-	bounds := img.Bounds()
-	columns := bounds.Dx() / tileW
-	rows := bounds.Dy() / tileH
-	if columns < 1 {
-		columns = 1
-	}
-	if rows < 1 {
-		rows = 1
-	}
-	tiles, err := scrolling.GridImages(img, image.Pt(tileW, tileH), columns, columns*rows)
+	atlas, err := sprites.NewAtlas(sprites.AtlasConfig{
+		Image: img, TileW: tileW, TileH: tileH, FallbackWhole: true,
+	})
 	if err != nil {
-		tiles = []*ebiten.Image{img}
-		columns = 1
+		panic(err)
 	}
-
-	return &TileSet{
-		Image:   img,
-		Tiles:   tiles,
-		TileW:   tileW,
-		TileH:   tileH,
-		Columns: columns,
-	}
-}
-
-func (t *TileSet) Tile(index int) *ebiten.Image {
-	if len(t.Tiles) == 0 {
-		return t.Image
-	}
-	if index < 0 {
-		index = 0
-	}
-	if index >= len(t.Tiles) {
-		index = index % len(t.Tiles)
-	}
-	return t.Tiles[index]
+	return atlas
 }
 
 type TileMap struct {

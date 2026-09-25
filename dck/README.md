@@ -75,6 +75,10 @@ Reset now uses one DCK `timeline.StageSequence` for same-tick text-cursor
 handoffs and a three-window showcase with two reusable fades. Its raster
 images and layer order remain scene data; eight captures through the final
 part match the previous renderer pixel for pixel.
+The menu now borrows its map, character, logo and text tiles from
+`sprites.Atlas`, while `sprites.FrameSequence` selects the authored movement
+and thrust frames. The seven menu motion programs retain their scene-specific
+positions and timing.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
