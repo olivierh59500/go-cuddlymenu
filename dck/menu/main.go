@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	audio "github.com/olivierh59500/democonstructionkit/sound/output"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -85,6 +86,7 @@ type Game struct {
 	scrollerLength int
 
 	background   *composite.CachedTileParallax
+	camera       *motion.CameraFollow
 	gameCanvas   *ebiten.Image
 	screenCanvas *ebiten.Image
 	crtCanvas    *ebiten.Image
@@ -129,11 +131,18 @@ func NewGame() *Game {
 	g.scrollTiles = NewTileSet(assets.Chrome, scrollTileW, scrollTileH)
 
 	g.mapLevel = NewTileMap(cuddlyMap, g.mapTiles)
+	var err error
+	g.camera, err = motion.NewCameraFollow(presets.CuddlyMenuCamera(
+		gameWidth, gameHeight, g.mapLevel.WidthPx, g.mapLevel.HeightPx,
+		dudeSize, dudeSize, tileSize-4,
+	))
+	if err != nil {
+		panic(err)
+	}
 	scrollMap := BuildScrollMap(scrollTextData)
 	g.scrollerLevel = NewTileMap([][]int{scrollMap}, g.scrollTiles)
 	g.scrollerLength = len(scrollMap) * scrollTileW
 
-	var err error
 	g.background, err = composite.NewCachedTileParallax(presets.CuddlyMenuTileParallax(g.mapTiles.Tile(1), gameWidth, gameHeight, tileSize))
 	if err != nil {
 		panic(err)
@@ -594,37 +603,9 @@ func (g *Game) calculatePositions() (int, int, float64, float64, float64) {
 	dudePosX := int(math.Round(m.Position.X))
 	dudePosY := int(math.Round(m.Position.Y))
 
-	mapWidth := g.mapLevel.WidthPx
-	mapHeight := g.mapLevel.HeightPx - (tileSize - 4)
-
-	dudeScreenX := 0
-	mapX := 0
-	if dudePosX <= gameWidth/2-dudeSize/2 {
-		dudeScreenX = dudePosX
-		mapX = 0
-	} else if dudePosX > mapWidth-gameWidth/2-dudeSize/2 {
-		dudeScreenX = gameWidth - (mapWidth - dudePosX)
-		mapX = mapWidth - gameWidth
-	} else {
-		dudeScreenX = gameWidth/2 - dudeSize/2
-		mapX = dudePosX - (gameWidth/2 - dudeSize/2)
-	}
-
-	dudeScreenY := 0
-	mapY := 0
-	if dudePosY <= gameHeight/2-dudeSize/2 {
-		dudeScreenY = dudePosY
-		mapY = 0
-	} else if dudePosY > mapHeight-gameHeight/2-dudeSize/2 {
-		dudeScreenY = gameHeight - (mapHeight - dudePosY)
-		mapY = mapHeight - gameHeight
-	} else {
-		dudeScreenY = gameHeight/2 - dudeSize/2
-		mapY = dudePosY - (gameHeight/2 - dudeSize/2)
-	}
-
+	pose := g.camera.At(dudePosX, dudePosY)
 	bounce := g.calculateBounce()
-	return mapX, mapY, float64(dudeScreenX), float64(dudeScreenY), bounce
+	return pose.CameraX, pose.CameraY, float64(pose.ScreenX), float64(pose.ScreenY), bounce
 }
 
 func (g *Game) calculateBounce() float64 {

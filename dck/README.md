@@ -85,6 +85,9 @@ The menu backdrop now uses `composite.CachedTileParallax`: one 800 × 432
 unmanaged surface is built at startup, and its wrapped half-speed camera
 offset is drawn once per frame. The former local tiling and offset functions
 are gone from the DCK menu.
+The character/map camera now uses `motion.CameraFollow` with independent world
+bounds, viewport size and sprite anchor. Its previous three-branch X/Y camera
+calculation is removed from the DCK menu.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
