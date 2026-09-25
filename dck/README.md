@@ -71,6 +71,10 @@ The loader's sector/blipp countdown, overlapping fade and black hold now use
 `timeline.Countdown` and `timeline.CueClock`. Rate changes keep elapsed fade
 time. Twelve captures across the entry, fade and blank boundaries match the
 previous loader pixel for pixel.
+Reset now uses one DCK `timeline.StageSequence` for same-tick text-cursor
+handoffs and a three-window showcase with two reusable fades. Its raster
+images and layer order remain scene data; eight captures through the final
+part match the previous renderer pixel for pixel.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.

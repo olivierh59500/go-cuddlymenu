@@ -7,6 +7,7 @@ import (
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
+	"github.com/olivierh59500/democonstructionkit/timeline"
 )
 
 func (s *Scene) reset() {
@@ -23,12 +24,17 @@ func (s *Scene) reset() {
 		return
 	}
 	s.closeEffects = append(s.closeEffects, letters.Close)
+	director, err := timeline.NewStageSequence(presets.CuddlyResetDirector())
+	if err != nil {
+		s.err = err
+		return
+	}
 	phases := make([]float64, 16)
 	for i := range phases {
 		phases[i] = float64(i) * .25
 	}
-	part, time, index := 1, 0, 12.0
-	offset, yy, fade := 0.0, 0.0, 0.0
+	index := 12.0
+	offset, yy := 0.0, 0.0
 	s.music("", false)
 	drawBack := func() {
 		angle := 2 * math.Pi / 384 * index
@@ -82,59 +88,54 @@ func (s *Scene) reset() {
 		}
 		// These are independent checks: a control can start the next part in
 		// this same tick, as in the original screen.
-		if part == 1 {
+		if director.Active("plain-a") {
 			r1.Step()
 			r1.DrawAt(plain, 0, 184)
 			s.draw(s.Canvas, plain, 64, 70)
 			if r1.NextRune() == '\\' {
 				s.music("cuddlyreset.ym", true)
-				part++
+				director.Trigger("first-end")
 			}
 		}
-		if part == 2 {
+		if director.Active("plain-b") {
 			r2.Step()
 			r2.DrawAt(plain, 0, 184)
 			s.draw(s.Canvas, plain, 64, 70)
 			if r2.NextRune() == ']' {
-				part++
+				director.Trigger("second-end")
 			}
 		}
-		if part == 3 {
+		if director.Active("masked-a") {
 			r3.Step()
 			r3.DrawAt(scroll, 0, 184)
 			maskScroll()
 			if r3.NextRune() == '\\' {
-				part++
+				director.Trigger("third-end")
 			}
 		}
-		if part == 4 {
+		if director.Active("showcase") {
 			drawBack()
 			drawBars()
-			if time <= 40 {
-				s.transform(s.Canvas, back, 64, 70, 1, 1, 0, 0, 0, math.Min(1, fade), ebiten.BlendSourceOver)
-				fade += .025
-			}
-			if time == 41 {
-				fade = 0
-			}
-			if time >= 41 && time <= 80 {
-				s.transform(s.Canvas, bars, 0, 40, 1, .85, 0, 0, 0, math.Min(1, fade), ebiten.BlendSourceOver)
+			phase, alpha := director.Window()
+			switch phase {
+			case 0:
+				s.transform(s.Canvas, back, 64, 70, 1, 1, 0, 0, 0, alpha, ebiten.BlendSourceOver)
+			case 1:
+				s.transform(s.Canvas, bars, 0, 40, 1, .85, 0, 0, 0, alpha, ebiten.BlendSourceOver)
 				s.draw(s.Canvas, back, 64, 70)
-				fade += .025
-			}
-			if time >= 81 {
+			case 2:
 				s.transform(s.Canvas, bars, 0, 40, 1, .85, 0, 0, 0, 1, ebiten.BlendSourceOver)
 				s.draw(s.Canvas, back, 64, 70)
 			}
-			time++
+			director.StepWindow()
 			if r4.NextRune() == ']' {
-				part++
+				director.Trigger("fourth-end")
 			}
 			r4.Step()
 			r4.DrawAt(scroll, 0, 184)
 			maskScroll()
 		}
-		if part == 5 {
+		if director.Active("final") {
 			drawBack()
 			drawBars()
 			s.transform(s.Canvas, bars, 0, 40, 1, .85, 0, 0, 0, 1, ebiten.BlendSourceOver)
