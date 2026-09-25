@@ -95,7 +95,8 @@ Thirty-six checkpoints across the five screens match the previous images pixel
 for pixel, including Ehhh's later control changes.
 Big Sprite's front/back emblem now uses `sprites.AxisFlip` with the original
 threshold, signed scale and face angle. Sixteen checkpoints around the face
-changes and bounce boundaries remain pixel-identical.
+changes and bounce boundaries remain pixel-identical after snapping each
+face's odd-sized anchor to its original integer center.
 The Digi, Ehhh and introduction row-profile tables now come from editable DCK
 wave programs. Their overlapping writes, zero lead-ins and source-phase offsets
 are compiled once at setup. Thirty checkpoints, including late wraps,

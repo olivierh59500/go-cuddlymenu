@@ -144,8 +144,9 @@ func (s *Scene) bigSprite() {
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 320, Y: 200}, motion.Point{X: 160, Y: 400 / 3.7})
 	face, err := sprites.NewAxisFlip(sprites.AxisFlipConfig{
 		Front: front, Back: back, SwitchAt: .01, BackAngle: 180,
-		Motion: motion.BounceBankConfig{Start: []float64{1}, Velocity: []float64{-.02}, Min: -1, Max: 1, Inclusive: true, Directional: true},
-		Filter: s.filters[stage], Blend: ebiten.BlendSourceOver,
+		Motion:     motion.BounceBankConfig{Start: []float64{1}, Velocity: []float64{-.02}, Min: -1, Max: 1, Inclusive: true, Directional: true},
+		SnapCenter: true,
+		Filter:     s.filters[stage], Blend: ebiten.BlendSourceOver,
 	})
 	if err != nil {
 		s.err = err
