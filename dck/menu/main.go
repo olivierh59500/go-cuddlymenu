@@ -14,6 +14,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	audio "github.com/olivierh59500/democonstructionkit/sound/output"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 type Vec2 struct {
@@ -87,7 +88,7 @@ type Game struct {
 	screenCanvas *ebiten.Image
 	crtCanvas    *ebiten.Image
 
-	sineSprites *SineSprites
+	sineSprites *sprites.FormationCarousel
 	animations  DudeAnimations
 
 	model        Model
@@ -132,7 +133,11 @@ func NewGame() *Game {
 	g.scrollerLength = len(scrollMap) * scrollTileW
 
 	g.background = g.buildBackground()
-	g.sineSprites = &SineSprites{Tiles: g.carebearTiles}
+	var err error
+	g.sineSprites, err = sprites.NewFormationCarousel(presets.CuddlyMenuCarousel(g.carebearTiles))
+	if err != nil {
+		panic(err)
+	}
 
 	g.animations = DudeAnimations{
 		MoveRight:   Animation{Duration: 0.35, Indices: []int{2, 3, 4, 5, 6, 7, 8, 9}, Loop: true},

@@ -77,8 +77,10 @@ images and layer order remain scene data; eight captures through the final
 part match the previous renderer pixel for pixel.
 The menu now borrows its map, character, logo and text tiles from
 `sprites.Atlas`, while `sprites.FrameSequence` selects the authored movement
-and thrust frames. The seven menu motion programs retain their scene-specific
-positions and timing.
+and thrust frames. Its seven sprite trajectories now use the editable DCK
+`sprites.FormationCarousel`: ordered sine/cosine formulas, viewport-relative
+radii, per-sprite spacing, timed slides and pixel-snapped anchors are compiled
+once. The local `sine.go` formulas have been removed from this DCK version.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
