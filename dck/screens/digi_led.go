@@ -23,22 +23,21 @@ func (s *Scene) digi() {
 	for _, ch := range "HAEY" {
 		letters = append(letters, s.asset(string(ch)+".png"))
 	}
-	curve, err := motion.CompileWaveProgram(presets.CuddlyDigiWaveProgram()...)
+	logoConfig, err := presets.CuddlyDigiLogo(logo)
 	if err != nil {
 		s.err = err
 		return
 	}
-	counter := 0
+	logoRows, err := composite.NewTableWarpLogo(logoConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
 	weave := motion.DefaultWeave(motion.Point{X: 306, Y: 207}, motion.Point{X: 306, Y: 90.5})
 	group, err := sprites.NewGroup(sprites.GroupConfig{
 		Frames: letters, Count: len(letters), FrameStride: 1, Weave: &weave,
 		Phase: -1, PhaseStep: 1, Filter: s.filters[stage],
 	})
-	if err != nil {
-		s.err = err
-		return
-	}
-	logoBounce, err := motion.NewWaveClock(presets.RectifiedSine(200, -160, .03))
 	if err != nil {
 		s.err = err
 		return
@@ -51,13 +50,12 @@ func (s *Scene) digi() {
 	s.render = func() {
 		clearBlack(s.Canvas)
 		clearBlack(stage)
-		bounce := logoBounce.At(0)
-		logoBounce.Step()
-		for i := 0; i < 170; i++ {
-			s.part(stage, logo, composite.Region{Y: float64(i), Width: 335, Height: 1}, 320+curve[(counter+i)%len(curve)]-167.5, 160+bounce/2+float64(i)-.5, 1, 1)
+		if err := logoRows.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		counter++
-		s.transform(stage, union, 320, bounce+14, 1, 1, 0, float64(union.Bounds().Dx()/2), float64(union.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
+		logoRows.Draw(stage)
+		s.transform(stage, union, 320, logoRows.Bounce()+14, 1, 1, 0, float64(union.Bounds().Dx()/2), float64(union.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		r.Step()
 		r.DrawAt(stage, 0, scrollBounce.At(0))
 		scrollBounce.Step()
