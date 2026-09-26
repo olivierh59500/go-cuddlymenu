@@ -31,7 +31,12 @@ func (s *Scene) ehh() {
 		s.err = err
 		return
 	}
-	curve, err := presets.CuddlyEhhhProfile()
+	logoConfig, err := presets.CuddlyEhhhLogoRows(logo)
+	if err != nil {
+		s.err = err
+		return
+	}
+	logoRows, err := composite.NewTableWarpLogo(logoConfig)
 	if err != nil {
 		s.err = err
 		return
@@ -41,9 +46,18 @@ func (s *Scene) ehh() {
 		s.err = err
 		return
 	}
-	phase, rollX := 0.0, 0.0
+	innerRoll, err := motion.NewWrapBank(presets.CuddlyEhhhInnerRollWrap())
+	if err != nil {
+		s.err = err
+		return
+	}
+	middleRaster, err := composite.NewRasterOverlay(presets.CuddlyEhhhMiddleRaster(raster))
+	if err != nil {
+		s.err = err
+		return
+	}
+	phase := 0.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 384, Y: 270}, motion.Point{X: 135, Y: 200})
-	index := 0
 	s.render = func() {
 		clearBlack(s.Canvas)
 		a.Clear()
@@ -62,20 +76,18 @@ func (s *Scene) ehh() {
 			r2.Step()
 			r2.DrawAt(b, 0, 0)
 		}
-		s.transform(b, raster, 0, 0, 1, 1, 0, 0, 0, 1, ebiten.BlendSourceAtop)
+		middleRaster.Draw(b)
 		s.draw(s.Canvas, b, 64, 86)
 		s.transform(s.Canvas, b, 64, 152, 1, -1, 0, 0, 0, 1, ebiten.BlendSourceOver)
-		for row := 0; row < 170; row++ {
-			s.part(s.Canvas, logo, composite.Region{Y: float64(row), Width: 767, Height: 1}, 384+curve[(index+row)%len(curve)]-383.5, float64(row)-.5, 1, 1)
+		if err := logoRows.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		index++
+		logoRows.Draw(s.Canvas)
 		y := rollerClock.At()
 		s.draw(s.Canvas, roller, 64, 346-y)
-		s.draw(roll, inner, rollX, 0)
-		rollX -= 2
-		if rollX <= -16 {
-			rollX = 0
-		}
+		s.draw(roll, inner, innerRoll.At(0), 0)
+		innerRoll.Step()
 		s.draw(s.Canvas, roll, 96, 360-y)
 		r1.Step()
 		r1.DrawAt(a, 0, 0)
