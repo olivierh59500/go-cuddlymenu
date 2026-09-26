@@ -56,6 +56,9 @@ are configurable DCK effects.
 The 125 orange discs now use `sprites.RotatingDiscCloud` for their shared
 rotation, projection, stable depth order and batched material. A pure test
 matches the prior model poses over 1,000 ticks; screen composition stays here.
+Knucklebuster's head and drums now use `sprites.LatchedOverlay` for its seeded
+five-tick hit windows. A separate DCK preset can replace the random source
+with a live music/event signal without changing the sprite positions.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -275,22 +274,15 @@ func (s *Scene) knucklebuster() {
 	logo, body, head, bass, left, right, font := s.asset("logo.png"), s.asset("batteur.png"), s.asset("tete2.png"), s.asset("bdrum.png"), s.asset("ldrum.png"), s.asset("rdrum.png"), s.asset("fonts.png")
 	stage, scroll := s.surface(640, 400), s.surface(640, 34)
 	r := s.ring(scroll, font, "cuddly-knucklebuster", s.data.Strings["text"], 8)
-	timer := 0
-	var on [3]bool
-	var triggers [3]float64
+	hits, err := sprites.NewLatchedOverlay(presets.CuddlyKnucklebusterHits(head, bass, left, right, s.rnd))
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
-		if timer == 0 {
-			for i := range on {
-				triggers[i] = math.Floor(s.rnd()*750) + 1
-			}
-			timer = 5
-		}
-		// The original trigger values reassert the overlay each tick; a new
-		// low value does not clear an already latched hit until the timer does.
-		for i, v := range triggers {
-			if v >= 725 {
-				on[i] = true
-			}
+		if err := hits.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
 		clearBlack(stage)
 		s.draw(stage, logo, 0, 0)
@@ -299,21 +291,8 @@ func (s *Scene) knucklebuster() {
 		r.Step()
 		r.DrawAt(scroll, 0, 0)
 		s.draw(stage, scroll, 0, 364)
-		if on[0] {
-			s.draw(stage, head, 316, 110)
-			s.draw(stage, bass, 298, 210)
-		}
-		if on[1] {
-			s.draw(stage, left, 196, 138)
-		}
-		if on[2] {
-			s.draw(stage, right, 381, 131)
-		}
+		hits.Draw(stage)
 		clearBlack(s.Canvas)
 		s.draw(s.Canvas, stage, 64, 70)
-		timer--
-		if timer == 1 {
-			on = [3]bool{}
-		}
 	}
 }
