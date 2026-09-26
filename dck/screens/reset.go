@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/timeline"
@@ -35,8 +36,13 @@ func (s *Scene) reset() {
 		s.err = err
 		return
 	}
+	rasterScroll, err := motion.NewWrapBank(presets.CuddlyResetRasterScroll())
+	if err != nil {
+		s.err = err
+		return
+	}
 	index := 12.0
-	offset, yy := 0.0, 0.0
+	offset := 0.0
 	s.music("", false)
 	drawBack := func() {
 		angle := 2 * math.Pi / 384 * index
@@ -56,11 +62,8 @@ func (s *Scene) reset() {
 		for _, img := range []*ebiten.Image{back, plain, scroll, merge, rotated, bars} {
 			img.Clear()
 		}
-		s.draw(off, raster, 0, yy)
-		yy -= 2
-		if yy <= -480 {
-			yy = 3
-		}
+		s.draw(off, raster, 0, rasterScroll.At(0))
+		rasterScroll.Step()
 		// These are independent checks: a control can start the next part in
 		// this same tick, as in the original screen.
 		if director.Active("plain-a") {
