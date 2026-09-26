@@ -62,6 +62,8 @@ with a live music/event signal without changing the sprite positions.
 Starwars' eight small sprites now use `sprites.SampledSpriteTrain` with its
 authored XY tables, staggered samples and independent X/Y waves. The shared
 controller keeps one copy of each path table and retains the strict wrap tick.
+Its green and red text now uses `scrolling.DualProfiledRing`: both fonts, the
+segmented vertical profile, raster fill and first-frame filter are DCK settings.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames

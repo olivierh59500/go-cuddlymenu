@@ -6,9 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
-	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/geometry"
-	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -16,35 +14,25 @@ import (
 
 func (s *Scene) starwars() {
 	background, green, red, raster, font, sprite := s.asset("bg.png"), s.asset("fontg.png"), s.asset("fontr.png"), s.asset("scrollraster.png"), s.asset("swfont.png"), s.asset("theunionsprite.png")
-	main, a, b, masked := s.surface(320, 200), s.surface(320, 25), s.surface(320, 25), s.surface(320, 200)
+	main := s.surface(320, 200)
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	r1, r2 := s.ring(a, green, "cuddly-starwars-scroll", s.data.Strings["stext"], 8), s.ring(b, red, "cuddly-starwars-scroll", s.data.Strings["stext"], 8)
+	dualConfig, err := presets.CuddlyStarwarsDualScroll(green, red, raster, s.data.Strings["stext"])
+	if err != nil {
+		s.err = err
+		return
+	}
+	dualScroll, err := scrolling.NewDualProfiledRing(dualConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, dualScroll.Close)
 	words := s.data.Lists["sstext"]
 	if len(words) < 30 {
 		s.err = fmt.Errorf("missing Starwars text rows")
 		return
 	}
 	grid := s.bitmap(font, "cuddly-starwars-crawl", ebiten.FilterLinear)
-	var wave []float64
-	absoluteWave := motion.Wave{Amplitude: 50, Speed: 1, Rectify: true}
-	for _, segment := range []struct {
-		n        int
-		absolute bool
-	}{{100, false}, {100, false}, {50, false}, {60, true}, {30, false}, {50, false}, {30, false}, {72, false}, {60, false}, {50, false}, {30, false}, {100, false}} {
-		phase := 0.0
-		step := 2 * math.Pi / float64(segment.n)
-		for i := 0; i < segment.n; i++ {
-			v := 50*math.Sin(phase)/2 + .5
-			if segment.absolute {
-				v = absoluteWave.At(0, phase)
-			}
-			wave = append(wave, roundHalfUp(v))
-			phase += step
-		}
-	}
-	// The reference pushes its tail array as one element. It is never sampled,
-	// but its presence extends the counter's wrap threshold by exactly one tick.
-	wave = append(wave, 0)
 	field, err := sprites.NewProjectedField(sprites.ProjectedFieldConfig{
 		Field: sprites.FieldConfig{Count: 400, Depth: sprites.DepthWrap, Near: 0, Far: 130,
 			Spawn: func(i int, _ bool) sprites.Point {
@@ -87,21 +75,10 @@ func (s *Scene) starwars() {
 	}
 	s.closeEffects = append(s.closeEffects, crawl.Close)
 	depth, rotation, fade := 0.0, 180.0, 0.0
-	rasterFill, err := composite.NewRasterOverlay(composite.RasterOverlayConfig{
-		Image: raster, ScaleX: 320, ScaleY: 1, Alpha: 1,
-		VelocityY: -.5, WrapY: &composite.RasterWrap{Boundary: -72, Restart: 0},
-		Filter: ebiten.FilterNearest, Blend: ebiten.BlendSourceIn,
-	})
-	if err != nil {
-		s.err = err
-		return
-	}
-	flash, waveIndex := 0, 20
+	flash := 0
 	s.render = func() {
 		clearBlack(s.Canvas)
-		for _, surface := range []*ebiten.Image{main, a, b, masked} {
-			surface.Clear()
-		}
+		main.Clear()
 		flash++
 		if flash > 300 {
 			flash = 0
@@ -128,25 +105,11 @@ func (s *Scene) starwars() {
 			return
 		}
 		crawl.Draw(main)
-		rasterFill.Step()
-		waveIndex++
-		if waveIndex > len(wave)-80 {
-			waveIndex = 20
+		if err := dualScroll.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		r2.Step()
-		r2.DrawAt(b, 0, 0)
-		for i := 0; i < 20; i++ {
-			s.part(masked, b, composite.Region{X: float64(i * 16), Width: 16, Height: 26}, float64(i*16), wave[waveIndex+i]+26, 1, 1)
-		}
-		s.filters[masked] = ebiten.FilterNearest
-		rasterFill.Draw(masked)
-		s.filters[masked] = ebiten.FilterLinear
-		s.draw(main, masked, 0, 0)
-		r1.Step()
-		r1.DrawAt(a, 0, 0)
-		for i := 0; i < 20; i++ {
-			s.part(main, a, composite.Region{X: float64(i * 16), Width: 16, Height: 26}, float64(i*16), wave[waveIndex+i]+26, 1, 1)
-		}
+		dualScroll.Draw(main)
 		if err := spriteTrain.Update(kit.Frame{}); err != nil {
 			s.err = err
 			return
