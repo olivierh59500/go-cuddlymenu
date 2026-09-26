@@ -55,6 +55,8 @@ same absolute scene clock. Their source-row crops, bounce, zoom and draw order
 are configurable DCK effects.
 Digi's 170-row logo now uses `composite.TableWarpLogo`, which also supplies the
 bounce position for its companion Union logo without a screen-local phase loop.
+Ehhh's roller now uses `motion.CuedWaveClock` for lookahead characters, lane
+visibility, phase speeds and its stop at the next landing boundary.
 Mega Scroller's bar mask and 3D DOC's ordered inner-text color passes now use
 configurable `composite.RasterOverlay` source-atop materials.
 LED Scroller's 11-color, 2,000-row raster now comes from DCK's configurable

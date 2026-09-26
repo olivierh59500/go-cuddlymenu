@@ -36,16 +36,14 @@ func (s *Scene) ehh() {
 		s.err = err
 		return
 	}
-	rollBounce, err := motion.NewWaveClock(presets.RectifiedSine(0, 158, 0))
+	rollerClock, err := motion.NewCuedWaveClock(presets.CuddlyEhhhRoller())
 	if err != nil {
 		s.err = err
 		return
 	}
-	phase, bounceStep, rollX := 0.0, 0.0, 0.0
+	phase, rollX := 0.0, 0.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 384, Y: 270}, motion.Point{X: 135, Y: 200})
 	index := 0
-	mode := 0
-	show2, show3, stop := false, false, false
 	s.render = func() {
 		clearBlack(s.Canvas)
 		a.Clear()
@@ -60,7 +58,7 @@ func (s *Scene) ehh() {
 			return
 		}
 		barGroup.Draw(s.Canvas)
-		if show2 {
+		if rollerClock.State().ShowSecond {
 			r2.Step()
 			r2.DrawAt(b, 0, 0)
 		}
@@ -71,7 +69,7 @@ func (s *Scene) ehh() {
 			s.part(s.Canvas, logo, composite.Region{Y: float64(row), Width: 767, Height: 1}, 384+curve[(index+row)%len(curve)]-383.5, float64(row)-.5, 1, 1)
 		}
 		index++
-		y := rollBounce.At(0)
+		y := rollerClock.At()
 		s.draw(s.Canvas, roller, 64, 346-y)
 		s.draw(roll, inner, rollX, 0)
 		rollX -= 2
@@ -82,47 +80,15 @@ func (s *Scene) ehh() {
 		r1.Step()
 		r1.DrawAt(a, 0, 0)
 		s.draw(s.Canvas, a, 96, 360-y)
-		if show3 {
+		if rollerClock.State().ShowThird {
 			r3.Step()
 			r3.DrawAt(c, 0, 0)
 			s.draw(s.Canvas, c, 160, 348-y)
 			s.transform(s.Canvas, c, 160, 436-y, 1, -1, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		}
-		switch r1.NextRune() {
-		case '[':
-			mode = 1
-			show2 = true
-		case '\\':
-			mode = 2
-			show3 = true
-		case ']':
-			mode = 3
-		case '{':
-			mode = 4
-		}
-		switch mode {
-		case 1:
-			bounceStep = .03
-			stop = false
-		case 2:
-			bounceStep = .02
-			stop = false
-		case 3:
-			bounceStep = .07
-			stop = false
-		case 4:
-			stop = true
-		}
-		if rollBounce.Phase() >= 3.1 {
-			rollBounce.Reset()
-			if stop {
-				bounceStep = 0
-			}
-		}
-		if err := rollBounce.SetStep(bounceStep); err != nil {
+		if err := rollerClock.Step(r1.NextRune()); err != nil {
 			s.err = err
 			return
 		}
-		rollBounce.Step()
 	}
 }
