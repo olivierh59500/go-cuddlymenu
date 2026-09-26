@@ -2,7 +2,6 @@ package screens
 
 import (
 	"fmt"
-	"image"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,6 +10,7 @@ import (
 	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/sprites"
+	"github.com/olivierh59500/democonstructionkit/timeline"
 )
 
 func (s *Scene) intro() {
@@ -20,12 +20,7 @@ func (s *Scene) intro() {
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.draw(a, logo, 46, 0)
 	s.draw(dist, union, 0, 0)
-	xwave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, CenterStrips: true, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 7, Spatial: .03, Speed: -.035}, {Amplitude: 7, Spatial: .01, Speed: .05}}}
-	ywave := composite.WaveStrips{Axis: composite.Columns, Thickness: 1, CenterStrips: true, PixelSnap: true, Filter: ebiten.FilterNearest, Waves: []composite.StripWave{{Amplitude: 4, Spatial: .02, Speed: -.035}, {Amplitude: 4, Spatial: .005, Speed: .05}}}
-	chain, err := composite.NewWaveChain(
-		composite.WavePass{Size: image.Pt(460, 120), X: 230, Y: 40, Wave: xwave},
-		composite.WavePass{Size: image.Pt(460, 80), X: 0, Y: 35, Wave: ywave},
-	)
+	chain, err := composite.NewWaveChain(presets.CuddlyIntroMainLogoWarp()...)
 	if err != nil {
 		s.err = err
 		return
@@ -37,30 +32,34 @@ func (s *Scene) intro() {
 		return
 	}
 	px, py := s.data.Numbers["starposX"], s.data.Numbers["starposY"]
-	profile := composite.ProfileStrips{Offsets: curve, Speed: 2, Thickness: 1, Filter: ebiten.FilterNearest}
+	profile := presets.CuddlyIntroUnionLogoProfile(curve)
 	points := make([]sprites.SparklePoint, 9)
 	for i := range points {
 		points[i] = sprites.SparklePoint{X: px[i], Y: py[i]}
 	}
-	sparkles, err := sprites.NewSparkles(sprites.SparkleConfig{Images: []sprites.SparkleImage{{Image: stars[0], Spin: 10}, {Image: stars[1], Angles: []float64{0, 45}}}, Positions: points, StartScale: 1, EndScale: 0, ScaleStep: -.025, PauseTicks: 20, Filter: ebiten.FilterNearest})
+	sparkles, err := sprites.NewSparkles(presets.CuddlyIntroSparkles(stars[0], stars[1], points))
 	if err != nil {
 		s.err = err
 		return
 	}
-	timer := 500
+	stills, err := timeline.NewStillThenMain(presets.CuddlyIntroStills())
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.music("", false)
 	s.render = func() {
 		clearBlack(s.Canvas)
-		if timer > 0 {
-			if timer > 200 {
-				s.draw(s.Canvas, calvin, 288, 124)
-			}
-			timer -= 2
+		frame := stills.Next()
+		if frame.Phase == timeline.StillImage {
+			s.draw(s.Canvas, calvin, 288, 124)
 			return
 		}
-		if timer == 0 {
+		if frame.Phase == timeline.StillBlank {
+			return
+		}
+		if frame.Cue {
 			s.music("cuddlyintro.mp3", true)
-			timer = -1
 		}
 		s.draw(s.Canvas, main, 0, 0)
 		profile.DrawAt(s.Canvas, dist, 256, 204)
