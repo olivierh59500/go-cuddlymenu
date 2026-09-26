@@ -50,6 +50,9 @@ Cuddly DNA's front/back text ribbon now uses `composite.TwistingRibbon` for its
 twenty ordered strips and strict phase wrap. A pure controller test compares
 every strip pose for 1,000 frames; the logo row warp and scene layers retain
 their independent timing.
+Its three logo copies now use two `composite.SampledRows` programs with the
+same absolute scene clock. Their source-row crops, bounce, zoom and draw order
+are configurable DCK effects; the remaining disc-cloud path stays independent.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames

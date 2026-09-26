@@ -30,6 +30,26 @@ func (s *Scene) dna() {
 	}
 	fFront, fBack := s.feedback(320, 64, 4, 2, 1, 25, s.data.Numbers["dna_pos"]), s.feedback(320, 64, 4, 2, -1, 37, s.data.Numbers["dna_pos"])
 	gradientFront, gradientBack, logo := s.asset("gradient_dna_front.png"), s.asset("gradient_dna_back.png"), s.asset("tcb.png")
+	outerConfig, err := presets.CuddlyDNAOuterLogoRows(logo)
+	if err != nil {
+		s.err = err
+		return
+	}
+	outerRows, err := composite.NewSampledRows(outerConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
+	centerConfig, err := presets.CuddlyDNACenterLogoRows(logo)
+	if err != nil {
+		s.err = err
+		return
+	}
+	centerRows, err := composite.NewSampledRows(centerConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
 	wave := composite.WaveStrips{Axis: composite.Columns, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 30, Spatial: .004, Speed: .04}}}
 	points := make([]geometry.Vec3, 125)
 	for i := range points {
@@ -97,24 +117,17 @@ func (s *Scene) dna() {
 			particles[i] = sprites.Disc{X: p.x, Y: p.y, Radius: p.r, ColorScale: tint}
 		}
 		discs.DrawAt(main, particles, 0, 0)
-		t := float64(iteration)
-		for _, x := range []float64{60, 268} {
-			decal := 0.0
-			if x >= 160 {
-				decal = 10
-			}
-			height := .5 + (1+math.Sin(t/15))*.75
-			bounce := float64(int(10 * math.Cos(decal+t/15)))
-			for j := 0; j < 56; j++ {
-				offset := float64(int(4 * math.Sin(decal+(t+float64(j)*height)/10)))
-				s.part(main, logo, composite.Region{Y: float64(int(float64(j) * height)), Width: 96, Height: 1}, x+offset, 100+bounce+float64(j), 1, 1)
-			}
+		rowFrame := kit.Frame{Time: float64(iteration)}
+		if err := outerRows.Update(rowFrame); err != nil {
+			s.err = err
+			return
 		}
-		for j := 0; j < 56; j++ {
-			z := math.Sin(4*(t/67+float64(j)/131))/4 + .75
-			y := 20 * math.Sin(5*(t/61+float64(j)*z/127))
-			s.part(main, logo, composite.Region{Y: float64(int(float64(55-j) * .5)), Width: 96, Height: 2}, 212-z*48, 120+y, z, z)
+		outerRows.Draw(main)
+		if err := centerRows.Update(rowFrame); err != nil {
+			s.err = err
+			return
 		}
+		centerRows.Draw(main)
 		dnaBack.Clear()
 		rBack.Step()
 		rBack.DrawAt(dnaBack, 0, 0)
