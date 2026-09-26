@@ -61,6 +61,10 @@ Its logo now uses the same sampled-row effect as Digi with an independent curve;
 its inner strip and middle-text raster use `WrapBank` and `RasterOverlay`.
 Mega Scroller's bar mask and 3D DOC's ordered inner-text color passes now use
 configurable `composite.RasterOverlay` source-atop materials.
+Mega Scroller and LED Scroller now share `composite.TiledWaveBackdrop` for their
+cached tile fields and row waves. LED selects a retained moving source and
+keeps its explicit one-frame preload; Mega Scroller draws its two waves directly.
+Their source sizes and output surfaces are unchanged.
 LED Scroller's 11-color, 2,000-row raster now comes from DCK's configurable
 uniform gradient material with the original center sampling and rounding.
 The 125 orange discs now use `sprites.RotatingDiscCloud` for their shared
@@ -85,9 +89,10 @@ per screen.
 Ehhh's seven moving raster images now use one `sprites.Train` with a
 phase-spaced cosine wave. Five checkpoints match the previous Ehhh renderer
 pixel for pixel.
-LED's background and gradient also use DCK's `motion.WrapBank`; ten
-checkpoints, including the pre-render and both wrap boundaries, match the
-previous screen pixel for pixel.
+LED's gradient uses `motion.WrapBank`, while the tile-source clock now belongs
+to `TiledWaveBackdrop`. Ten earlier pixel checkpoints covered the pre-render
+and both wraps; the shared backdrop has an opt-in GPU comparison ready for a
+graphical session.
 Its nine letters now use `motion.HarmonicFormation` through `sprites.Group`.
 The authored phase table and a bouncing amplitude remain editable DCK
 parameters, and the group keeps the original draw-before-step timing.

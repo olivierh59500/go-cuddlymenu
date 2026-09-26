@@ -60,15 +60,15 @@ func (s *Scene) colorshock() {
 
 func (s *Scene) megaScroller() {
 	font, tile, bars := s.asset("font.png"), s.asset("bg.png"), s.asset("whitebars.png")
-	stage, background, mask, merge := s.surface(640, 400), s.surface(500, 240), s.surface(320, 240), s.surface(320, 240)
+	stage, mask, merge := s.surface(640, 400), s.surface(320, 240), s.surface(320, 240)
 	s.filters[stage] = ebiten.FilterNearest
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	tiles, err := composite.NewBackground(composite.BackgroundConfig{PeriodX: 8, PeriodY: 8, Filter: ebiten.FilterLinear})
+	backdrop, err := composite.NewTiledWaveBackdrop(presets.CuddlyMegaScrollerBackdrop(tile))
 	if err != nil {
 		s.err = err
 		return
 	}
-	tiles.DrawAt(background, tile, 0, 0)
+	s.closeEffects = append(s.closeEffects, backdrop.Close)
 	for i := 0; i < 48; i++ {
 		s.draw(mask, bars, float64(i*8), 0)
 	}
@@ -78,7 +78,6 @@ func (s *Scene) megaScroller() {
 		return
 	}
 	r := s.ring(merge, font, "cuddly-megascroller", s.data.Strings["text"], 10)
-	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterNearest, Waves: []composite.StripWave{{Amplitude: 30, Spatial: .03, Speed: -.05}, {Amplitude: 30, Spatial: .01, Speed: .08}}}
 	verticalMotion, err := motion.NewBounceBank(motion.BounceBankConfig{
 		Start: []float64{45}, Velocity: []float64{-2}, Min: -70, Max: 20,
 		Inclusive: true, Directional: true, AllowOutsideStart: true,
@@ -91,8 +90,8 @@ func (s *Scene) megaScroller() {
 		clearBlack(s.Canvas)
 		clearBlack(stage)
 		merge.Clear()
-		wave.DrawAt(stage, background, -110, -9)
-		wave.Advance()
+		backdrop.Draw(stage)
+		backdrop.Step()
 		r.Step()
 		r.DrawAt(merge, 0, 0)
 		verticalMotion.Step()

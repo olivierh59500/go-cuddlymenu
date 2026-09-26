@@ -65,15 +65,15 @@ func (s *Scene) digi() {
 
 func (s *Scene) led() {
 	font, tile, the, bubble := s.asset("ledfont.png"), s.asset("tcbtile.png"), s.asset("the.png"), s.asset("bubble.png")
-	stage, led, off, warped, tiled := s.surface(640, 400), s.surface(640, 112), s.surface(384, 233), s.surface(384, 233), s.surface(384, 233)
+	stage, led, warped := s.surface(640, 400), s.surface(640, 112), s.surface(384, 233)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[stage] = ebiten.FilterNearest
-	tiles, err := composite.NewBackground(composite.BackgroundConfig{PeriodX: 32, PeriodY: 33, Filter: ebiten.FilterLinear})
+	backdrop, err := composite.NewTiledWaveBackdrop(presets.CuddlyLEDBackdrop(tile))
 	if err != nil {
 		s.err = err
 		return
 	}
-	tiles.DrawAt(tiled, tile, 0, 0)
+	s.closeEffects = append(s.closeEffects, backdrop.Close)
 	bubbles := s.surface(640, 112)
 	bubbleTiles, err := composite.NewBackground(composite.BackgroundConfig{PeriodX: 16, PeriodY: 16, Filter: ebiten.FilterLinear})
 	if err != nil {
@@ -88,19 +88,10 @@ func (s *Scene) led() {
 		return
 	}
 	s.surfaces = append(s.surfaces, gradient)
-	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 6, Spatial: .08, Speed: .2}}}
 	r := s.ring(led, font, "cuddly-led", s.data.Strings["text"], 16)
 	var letters []*ebiten.Image
 	for _, name := range []string{"c", "a", "r", "e", "b", "e", "a", "r", "s"} {
 		letters = append(letters, s.asset(name+".png"))
-	}
-	tileMotion, err := motion.NewWrapBank(motion.WrapBankConfig{
-		Start: []float64{0}, Velocity: []float64{-2},
-		Lower: &motion.WrapLimit{Boundary: -33, Restart: 0, Inclusive: true},
-	})
-	if err != nil {
-		s.err = err
-		return
 	}
 	gradientMotion, err := motion.NewWrapBank(motion.WrapBankConfig{
 		Start: []float64{0}, Velocity: []float64{-1},
@@ -139,10 +130,8 @@ func (s *Scene) led() {
 	}
 	load := func() {
 		warped.Clear()
-		s.draw(off, tiled, 0, tileMotion.At(0))
-		tileMotion.Step()
-		wave.DrawAt(warped, off, -32, 0)
-		wave.Advance()
+		backdrop.Draw(warped)
+		backdrop.Step()
 		s.transform(warped, the, 160, theBounce.At(0), .5, .5, 0, float64(the.Bounds().Dx()/2), float64(the.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		theBounce.Step()
 	}
