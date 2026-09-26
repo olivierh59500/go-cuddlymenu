@@ -5,6 +5,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
+	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/timeline"
@@ -29,9 +30,10 @@ func (s *Scene) reset() {
 		s.err = err
 		return
 	}
-	phases := make([]float64, 16)
-	for i := range phases {
-		phases[i] = float64(i) * .25
+	rasterOrbit, err := composite.NewPairedRasterOrbit(presets.CuddlyResetRasterOrbit(upA, upB, downA, downB))
+	if err != nil {
+		s.err = err
+		return
 	}
 	index := 12.0
 	offset, yy := 0.0, 0.0
@@ -43,33 +45,6 @@ func (s *Scene) reset() {
 		s.transform(back, backdrop, x, y, 1, 1, 0, float64(backdrop.Bounds().Dx()/2), float64(backdrop.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		index++
 		offset = math.Mod(offset+math.Pi/32, 2*math.Pi)
-	}
-	drawBars := func() {
-		pair := func(i int, a, b *ebiten.Image, alpha float64) {
-			y := 270 + 200*math.Cos(phases[i])
-			s.transform(bars, a, 100, y, 2, 1, 0, float64(a.Bounds().Dx()/2), float64(a.Bounds().Dy()/2), alpha, ebiten.BlendSourceOver)
-			s.transform(bars, b, 668, y, 2, 1, 0, float64(b.Bounds().Dx()/2), float64(b.Bounds().Dy()/2), alpha, ebiten.BlendSourceOver)
-		}
-		for i, a := range phases {
-			if a > math.Pi && a < 2*math.Pi {
-				pair(i, downA, downB, .5)
-			}
-		}
-		for i, a := range phases {
-			if a >= 0 && a <= math.Pi/2 {
-				pair(i, upA, upB, 1)
-			}
-		}
-		for i := len(phases) - 1; i >= 0; i-- {
-			a := phases[i]
-			if a > math.Pi/2 && a <= math.Pi {
-				pair(i, upA, upB, 1)
-			}
-			phases[i] += .05
-			if phases[i] >= 2*math.Pi {
-				phases[i] -= 2 * math.Pi
-			}
-		}
 	}
 	maskScroll := func() {
 		s.draw(merge, scroll, 0, 70)
@@ -115,7 +90,8 @@ func (s *Scene) reset() {
 		}
 		if director.Active("showcase") {
 			drawBack()
-			drawBars()
+			rasterOrbit.Step()
+			rasterOrbit.Draw(bars)
 			phase, alpha := director.Window()
 			switch phase {
 			case 0:
@@ -137,7 +113,8 @@ func (s *Scene) reset() {
 		}
 		if director.Active("final") {
 			drawBack()
-			drawBars()
+			rasterOrbit.Step()
+			rasterOrbit.Draw(bars)
 			s.transform(s.Canvas, bars, 0, 40, 1, .85, 0, 0, 0, 1, ebiten.BlendSourceOver)
 			s.draw(s.Canvas, back, 64, 70)
 			if err := letters.Update(kit.Frame{}); err != nil {
