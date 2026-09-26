@@ -37,6 +37,17 @@ func (s *Scene) doc() {
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	white := s.surface(1, 1)
 	white.Fill(color.White)
+	blackConfig, rasterConfig := presets.CuddlyDOCInnerMaterials(white, raster)
+	blackMaterial, err := composite.NewRasterOverlay(blackConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
+	rasterMaterial, err := composite.NewRasterOverlay(rasterConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
 	outerConfig, innerConfig := presets.CuddlyDOCRowWarps()
 	outerWarp, err := composite.NewRowWarp(outerConfig)
 	if err != nil {
@@ -87,11 +98,8 @@ func (s *Scene) doc() {
 		outerWarp.DrawInto(outerRows, outer)
 		innerWarp.DrawInto(innerRows, inner)
 		s.draw(s.Canvas, outerRows, 64, 62+vertical)
-		black := ebiten.DrawImageOptions{Blend: ebiten.BlendSourceAtop}
-		black.GeoM.Scale(640, 120)
-		black.ColorScale.Scale(0, 0, 0, 1)
-		innerRows.DrawImage(white, &black)
-		s.transform(innerRows, raster, 0, 20, 75, 1, 0, 0, 0, 1, ebiten.BlendSourceAtop)
+		blackMaterial.Draw(innerRows)
+		rasterMaterial.Draw(innerRows)
 		s.draw(s.Canvas, innerRows, 64, 62)
 		if err := outerWarp.Step(); err != nil {
 			s.err = err
