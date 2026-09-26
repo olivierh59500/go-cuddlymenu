@@ -2,8 +2,6 @@ package screens
 
 import (
 	"image"
-	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -84,7 +82,11 @@ func (s *Scene) led() {
 	}
 	// The authored bubble grid ends two pixels before the text surface edge.
 	bubbleTiles.DrawAt(bubbles.SubImage(image.Rect(0, 0, 638, 112)).(*ebiten.Image), bubble, -2, 0)
-	gradient := ledGradient()
+	gradient, err := composite.NewUniformGradientImage(presets.CuddlyLEDGradient())
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.surfaces = append(s.surfaces, gradient)
 	wave := composite.WaveStrips{Axis: composite.Rows, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 6, Spatial: .08, Speed: .2}}}
 	r := s.ring(led, font, "cuddly-led", s.data.Strings["text"], 16)
@@ -165,20 +167,4 @@ func (s *Scene) led() {
 		s.draw(s.Canvas, led, 64, ledBounce.At(0))
 		ledBounce.Step()
 	}
-}
-
-func ledGradient() *ebiten.Image {
-	stops := []color.RGBA{{255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {0, 255, 0, 255}, {255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {0, 255, 0, 255}}
-	pixels := image.NewRGBA(image.Rect(0, 0, 384, 2000))
-	for y := 0; y < 2000; y++ {
-		p := (float64(y) + .5) / 2000 * 10
-		i := min(9, int(p))
-		t := p - float64(i)
-		a, b := stops[i], stops[i+1]
-		c := color.RGBA{uint8(math.Round(float64(a.R)*(1-t) + float64(b.R)*t)), uint8(math.Round(float64(a.G)*(1-t) + float64(b.G)*t)), uint8(math.Round(float64(a.B)*(1-t) + float64(b.B)*t)), 255}
-		for x := 0; x < 384; x++ {
-			pixels.SetRGBA(x, y, c)
-		}
-	}
-	return ebiten.NewImageFromImage(pixels)
 }

@@ -55,6 +55,8 @@ same absolute scene clock. Their source-row crops, bounce, zoom and draw order
 are configurable DCK effects.
 Digi's 170-row logo now uses `composite.TableWarpLogo`, which also supplies the
 bounce position for its companion Union logo without a screen-local phase loop.
+LED Scroller's 11-color, 2,000-row raster now comes from DCK's configurable
+uniform gradient material with the original center sampling and rounding.
 The 125 orange discs now use `sprites.RotatingDiscCloud` for their shared
 rotation, projection, stable depth order and batched material. A pure test
 matches the prior model poses over 1,000 ticks; screen composition stays here.
