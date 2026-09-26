@@ -16,7 +16,11 @@ func screenAtTick(t *testing.T, spec Spec, rate, tick int) *Screen {
 	if err != nil {
 		t.Fatal(err)
 	}
-	l := &Screen{spec: spec, countdown: countdown, clock: clock}
+	gain, err := timeline.NewCueRamp(clock, timeline.CueRampConfig{Window: fadeCue, From: 1, To: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := &Screen{spec: spec, countdown: countdown, clock: clock, gain: gain}
 	for i := 0; i < tick; i++ {
 		l.advance()
 	}
