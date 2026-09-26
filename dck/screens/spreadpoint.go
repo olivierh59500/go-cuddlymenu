@@ -9,6 +9,7 @@ import (
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
+	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) feedback(width, height, speedX, speedY, direction int, insertY float64, profile []float64) *scrolling.FeedbackDNA {
@@ -44,6 +45,16 @@ func (s *Scene) spreadpoint() {
 	s.closeEffects = append(s.closeEffects, bands.Close)
 	r := s.ring(dnaText, dnaFont, "cuddly-dna", s.data.Strings["text_dna"], 4)
 	dna := s.feedback(320, 64, 4, 2, 1, 4, s.data.Numbers["dna_pos"])
+	ballConfig, err := presets.CuddlySpreadpointBallFormation(ball, 20)
+	if err != nil {
+		s.err = err
+		return
+	}
+	ballTrain, err := sprites.NewGroup(ballConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
 	var angles []float64
 	a := math.Pi
 	for _, segment := range []struct {
@@ -114,13 +125,11 @@ func (s *Scene) spreadpoint() {
 			s.draw(main, spread, 52, 29)
 		}
 		if iteration >= 804 {
-			t := float64(iteration - 804)
-			for j := 0; j < 20; j++ {
-				p := t/71 + float64(j)/47
-				x := 151 + roundHalfUp(151*math.Sin(5*p))
-				y := 50 + roundHalfUp(50*math.Sin(8*p))
-				s.draw(main, ball, x+52, y+29)
+			if err := ballTrain.Update(kit.Frame{}); err != nil {
+				s.err = err
+				return
 			}
+			ballTrain.Draw(main)
 		}
 		angle := angles[iteration%len(angles)]
 		y, z := math.Sin(angle), math.Cos(angle)/4+.75

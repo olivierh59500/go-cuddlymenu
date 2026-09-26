@@ -36,6 +36,9 @@ tables, and `loader.json` contains loading-screen captions and counters.
 The effects include configurable wave chains, profile-based distortion, sparkle
 overlays, feedback ribbons, projected rows and batched circular particles.
 Images, fonts, phases, sizes and layer order remain production parameters.
+Spreadpoint's twenty balls now use `sprites.Group` with a compiled X/Y formula.
+The time and index divisors, sine frequencies, amplitudes and optional pixel
+snapping are editable; a pure DCK test compares all positions over 400 ticks.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames
