@@ -6,8 +6,10 @@ import (
 	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/geometry"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
@@ -21,6 +23,11 @@ func (s *Scene) dna() {
 	sine := s.ring(sineText, s.asset("font_sin.png"), "cuddly-dna-sine", s.data.Strings["text_sin"], 3)
 	rFront := s.ring(dnaFront, s.asset("font_dna_front.png"), "cuddly-dna", s.data.Strings["text_dna"], 4)
 	rBack := s.ring(dnaBack, s.asset("font_dna_back.png"), "cuddly-dna", s.data.Strings["text_dna"], 4)
+	ribbon, err := composite.NewTwistingRibbon(presets.CuddlyDNARibbon(front, back))
+	if err != nil {
+		s.err = err
+		return
+	}
 	fFront, fBack := s.feedback(320, 64, 4, 2, 1, 25, s.data.Numbers["dna_pos"]), s.feedback(320, 64, 4, 2, -1, 37, s.data.Numbers["dna_pos"])
 	gradientFront, gradientBack, logo := s.asset("gradient_dna_front.png"), s.asset("gradient_dna_back.png"), s.asset("tcb.png")
 	wave := composite.WaveStrips{Axis: composite.Columns, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 30, Spatial: .004, Speed: .04}}}
@@ -41,7 +48,7 @@ func (s *Scene) dna() {
 	var tint ebiten.ColorScale
 	tint.ScaleWithColor(color.RGBA{238, 136, 0, 255})
 	rotation := 0.0
-	iteration, curve := 0, 0
+	iteration := 0
 	inIntro := true
 	s.music("", false)
 	s.render = func() {
@@ -65,50 +72,11 @@ func (s *Scene) dna() {
 		topBack.Step()
 		topFront.DrawAt(front, 0, 0)
 		topBack.DrawAt(back, 0, 0)
-		position := curve
-		for x := 0; x < 320; x += 16 {
-			amp, scale, decal := 15.0, 1.5, float64(position)*8*math.Pi/1280
-			if position >= 1280 {
-				amp, scale, decal = 30, 1, float64(position-1280)*8*math.Pi/2560
-			}
-			position += 6
-			if position > 3840 {
-				position -= 3840
-			}
-			a1 := math.Mod(math.Pi+.4+decal, 2*math.Pi)
-			a2 := math.Mod(a1+1.12, 2*math.Pi)
-			y1, y2 := roundHalfUp(amp*math.Sin(a1)), roundHalfUp(amp*math.Sin(a2))
-			if a1 > 3.6 || a1 < 1.5 {
-				from, to := y1, y2
-				if a1 > 3.6 && a1 < 4.6 {
-					from = -amp
-				}
-				if a1 > .5 && a1 < 1.5 {
-					to = amp
-				}
-				h := (to - from) / amp / scale
-				if h > .075 {
-					s.part(main, back, composite.Region{X: float64(x), Width: 16, Height: 25}, float64(x+52), amp+30+to, 1, -h)
-				}
-			}
-			if a1 > .5 && a1 < 4.6 {
-				from, to := y2, y1
-				if a1 > .5 && a1 < 1.5 {
-					to = amp
-				}
-				if a1 > 3.6 && a1 < 4.6 {
-					from = -amp
-				}
-				h := (to - from) / amp / scale
-				if h > .075 {
-					s.part(main, front, composite.Region{X: float64(x), Width: 16, Height: 25}, float64(x+52), amp+30+from, 1, h)
-				}
-			}
+		if err := ribbon.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		curve += 8
-		if curve > 3840 {
-			curve -= 3840
-		}
+		ribbon.DrawAt(main, 52, 0)
 		sineText.Clear()
 		sineWave.Clear()
 		sine.Step()
