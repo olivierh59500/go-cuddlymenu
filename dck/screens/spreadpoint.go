@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -62,21 +63,15 @@ func (s *Scene) spreadpoint() {
 		s.err = err
 		return
 	}
-	var angles []float64
-	a := math.Pi
-	for _, segment := range []struct {
-		count int
-		step  float64
-		reset *float64
-	}{{300, 0, number(math.Pi)}, {40, -math.Pi / 40, nil}, {300, 0, number(0)}, {640, -math.Pi / 40, nil}, {480, -math.Pi / 32, nil}, {512, math.Pi / 32, nil}} {
-		for i := 0; i < segment.count; i++ {
-			if segment.reset != nil {
-				a = *segment.reset
-			} else {
-				a += segment.step
-			}
-			angles = append(angles, math.Mod(a, 2*math.Pi))
-		}
+	phase, err := motion.NewPhaseSequence(presets.CuddlySpreadpointLogoPhases())
+	if err != nil {
+		s.err = err
+		return
+	}
+	orbit, err := motion.NewHarmonicTransform(presets.CuddlySpreadpointLogoTransform())
+	if err != nil {
+		s.err = err
+		return
 	}
 	white := s.surface(1, 1)
 	white.Fill(color.White)
@@ -138,14 +133,12 @@ func (s *Scene) spreadpoint() {
 			}
 			ballTrain.Draw(main)
 		}
-		angle := angles[iteration%len(angles)]
-		y, z := math.Sin(angle), math.Cos(angle)/4+.75
-		x := 64 - 64*z
-		if err := logoLayer.SetPassTransform(0, x, 45+40*y, z, z, 0); err != nil {
+		pose := orbit.At(phase.Current())
+		if err := logoLayer.SetPassTransform(0, pose.X, pose.Y, pose.ScaleX, pose.ScaleY, 0); err != nil {
 			s.err = err
 			return
 		}
-		if err := logoLayer.SetPassTransform(2, x, 45+40*y, z, z, 0); err != nil {
+		if err := logoLayer.SetPassTransform(2, pose.X, pose.Y, pose.ScaleX, pose.ScaleY, 0); err != nil {
 			s.err = err
 			return
 		}
@@ -162,8 +155,8 @@ func (s *Scene) spreadpoint() {
 			dna.DrawAt(main, 52, 150, 0, dnaGradient)
 		}
 		s.transform(s.Canvas, main, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
+		phase.Step()
 		iteration++
 	}
 }
-func number(v float64) *float64     { return &v }
 func roundHalfUp(v float64) float64 { return math.Floor(v + .5) }
