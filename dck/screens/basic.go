@@ -38,12 +38,19 @@ func (s *Scene) colorshock() {
 		s.err = err
 		return
 	}
-	vbl := 0.0
+	backgroundPath, err := motion.NewTrajectoryClock(motion.TrajectoryClockConfig{
+		Sample: func(phase float64) motion.Point { return orbit.At(phase, 0, 0, 0, 1) },
+		Step:   .8,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		back.Clear()
 		scroll.Clear()
-		point := orbit.At(vbl, 0, 0, 0, 1)
+		point := backgroundPath.At()
 		hx, hy := float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2)
 		backgroundLayer.DrawAt(back, background, point.X-hx, point.Y-hy)
 		s.draw(s.Canvas, back, 0, 0)
@@ -51,7 +58,10 @@ func (s *Scene) colorshock() {
 		r.DrawAt(scroll, 0, 0)
 		s.draw(scroll, accent, 0, 0)
 		s.draw(s.Canvas, scroll, 90, 110+positions[int(tableClock.At(0))])
-		vbl += .8
+		if err := backgroundPath.Step(); err != nil {
+			s.err = err
+			return
+		}
 		tableClock.Step()
 		s.transform(s.Canvas, logo, 370, 120, 1, 1, 0, float64(logo.Bounds().Dx()/2), float64(logo.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		s.Canvas.SubImage(image.Rect(0, 0, 768, 70)).(*ebiten.Image).Fill(color.Black)

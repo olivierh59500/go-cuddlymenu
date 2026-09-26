@@ -157,6 +157,11 @@ remain pixel-identical.
 Colorshock II now uses a DCK formula for its two-frequency backdrop orbit and
 `motion.WrapBank` for the indexed scroll position. Ten checkpoints around the
 strict table wrap remain pixel-identical.
+Its backdrop orbit phase now belongs to `motion.TrajectoryClock`; the compiled
+formula is sampled once per update and the original draw-before-step order is
+preserved. Captures of the complete scene remain pixel-identical before and
+after this migration at frames 0, 60, 240, 600, 1200, 2400 and 4800,
+including the scroll-table wrap.
 
 The unattended tour visits the introduction, every menu door, Reset and the menu
 again. Scene durations exclude loading and walking time.
