@@ -1,9 +1,7 @@
 package screens
 
 import (
-	"image/color"
 	"math"
-	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -56,18 +54,12 @@ func (s *Scene) dna() {
 		a, b := math.Pi*s.rnd(), 2*math.Pi*s.rnd()
 		points[i] = geometry.Vec3{X: 100 * math.Sin(a) * math.Cos(b), Y: 100 * math.Sin(a) * math.Sin(b), Z: 100 * math.Cos(a)}
 	}
-	type dot struct{ x, y, z, r float64 }
-	dots := make([]dot, len(points))
-	discs, err := sprites.NewDiscs(len(points))
+	cloud, err := sprites.NewRotatingDiscCloud(presets.CuddlyDNADiscCloud(points))
 	if err != nil {
 		s.err = err
 		return
 	}
-	s.closeEffects = append(s.closeEffects, discs.Close)
-	particles := make([]sprites.Disc, len(points))
-	var tint ebiten.ColorScale
-	tint.ScaleWithColor(color.RGBA{238, 136, 0, 255})
-	rotation := 0.0
+	s.closeEffects = append(s.closeEffects, cloud.Close)
 	iteration := 0
 	inIntro := true
 	s.music("", false)
@@ -104,19 +96,11 @@ func (s *Scene) dna() {
 		wave.DrawAt(sineWave, sineText, 0, 50)
 		wave.Advance()
 		s.draw(main, sineWave, 52, 72)
-		rotation += .03
-		sin, cos := math.Sincos(rotation)
-		focal := 138 / math.Tan(20*math.Pi/180)
-		for i, p := range points {
-			x, z := p.X*cos+p.Z*sin, p.Z*cos-p.X*sin
-			scale := focal / (900 - z)
-			dots[i] = dot{x: 208 + x*scale, y: 138 - (p.Y+16)*scale, z: z, r: scale}
+		if err := cloud.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		sort.SliceStable(dots, func(i, j int) bool { return dots[i].z < dots[j].z })
-		for i, p := range dots {
-			particles[i] = sprites.Disc{X: p.x, Y: p.y, Radius: p.r, ColorScale: tint}
-		}
-		discs.DrawAt(main, particles, 0, 0)
+		cloud.Draw(main)
 		rowFrame := kit.Frame{Time: float64(iteration)}
 		if err := outerRows.Update(rowFrame); err != nil {
 			s.err = err

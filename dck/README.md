@@ -52,7 +52,10 @@ every strip pose for 1,000 frames; the logo row warp and scene layers retain
 their independent timing.
 Its three logo copies now use two `composite.SampledRows` programs with the
 same absolute scene clock. Their source-row crops, bounce, zoom and draw order
-are configurable DCK effects; the remaining disc-cloud path stays independent.
+are configurable DCK effects.
+The 125 orange discs now use `sprites.RotatingDiscCloud` for their shared
+rotation, projection, stable depth order and batched material. A pure test
+matches the prior model poses over 1,000 ticks; screen composition stays here.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames
