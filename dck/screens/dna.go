@@ -1,8 +1,6 @@
 package screens
 
 import (
-	"math"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
@@ -49,10 +47,13 @@ func (s *Scene) dna() {
 		return
 	}
 	wave := composite.WaveStrips{Axis: composite.Columns, Thickness: 1, Filter: ebiten.FilterLinear, Waves: []composite.StripWave{{Amplitude: 30, Spatial: .004, Speed: .04}}}
-	points := make([]geometry.Vec3, 125)
-	for i := range points {
-		a, b := math.Pi*s.rnd(), 2*math.Pi*s.rnd()
-		points[i] = geometry.Vec3{X: 100 * math.Sin(a) * math.Cos(b), Y: 100 * math.Sin(a) * math.Sin(b), Z: 100 * math.Cos(a)}
+	points, err := geometry.SphereCloud(geometry.SphereCloudConfig{
+		Count: 125, Radius: 100, Sampling: geometry.SphereRandomAngles,
+		NextFloat: s.rnd,
+	})
+	if err != nil {
+		s.err = err
+		return
 	}
 	cloud, err := sprites.NewRotatingDiscCloud(presets.CuddlyDNADiscCloud(points))
 	if err != nil {

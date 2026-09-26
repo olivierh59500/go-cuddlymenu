@@ -74,6 +74,11 @@ uniform gradient material with the original center sampling and rounding.
 The 125 orange discs now use `sprites.RotatingDiscCloud` for their shared
 rotation, projection, stable depth order and batched material. A pure test
 matches the prior model poses over 1,000 ticks; screen composition stays here.
+Their initial 3D positions now come from `geometry.SphereCloud` with the
+screen's seeded two-sample random-angle distribution. Other demos may select
+equal-area random samples or a deterministic Fibonacci surface without
+changing the disc renderer. Six complete DNA captures at frames 0, 60, 240,
+600, 1,200 and 2,400 remain pixel-identical after this extraction.
 Knucklebuster's head and drums now use `sprites.LatchedOverlay` for its seeded
 five-tick hit windows. A separate DCK preset can replace the random source
 with a live music/event signal without changing the sprite positions.
