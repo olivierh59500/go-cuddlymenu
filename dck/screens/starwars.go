@@ -57,12 +57,10 @@ func (s *Scene) starwars() {
 		s.err = err
 		return
 	}
-	px, py := append([]float64(nil), s.data.Numbers["spriteX"]...), append([]float64(nil), s.data.Numbers["spriteY"]...)
-	period := len(px)
-	px = append(px, px...)
-	py = append(py, py...)
-	if period == 0 || len(py) < len(px) {
-		s.err = fmt.Errorf("missing Starwars sprite path")
+	spriteTrain, err := sprites.NewSampledSpriteTrain(presets.CuddlyStarwarsSpriteTrain(
+		sprite, s.data.Numbers["spriteX"], s.data.Numbers["spriteY"]))
+	if err != nil {
+		s.err = fmt.Errorf("Starwars sprite path: %w", err)
 		return
 	}
 	s.closeEffects = append(s.closeEffects, field.Close)
@@ -98,7 +96,7 @@ func (s *Scene) starwars() {
 		s.err = err
 		return
 	}
-	flash, waveIndex, spriteIndex := 0, 20, 0
+	flash, waveIndex := 0, 20
 	s.render = func() {
 		clearBlack(s.Canvas)
 		for _, surface := range []*ebiten.Image{main, a, b, masked} {
@@ -149,18 +147,11 @@ func (s *Scene) starwars() {
 		for i := 0; i < 20; i++ {
 			s.part(main, a, composite.Region{X: float64(i * 16), Width: 16, Height: 26}, float64(i*16), wave[waveIndex+i]+26, 1, 1)
 		}
-		spriteIndex++
-		if spriteIndex > period {
-			spriteIndex = 0
+		if err := spriteTrain.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
-		for i := 0; i < 8; i++ {
-			extra := 0
-			if i >= 3 {
-				extra = 5
-			}
-			index := spriteIndex + i*5 + extra
-			s.part(main, sprite, composite.Region{X: float64(112 - i*16), Width: 16, Height: 10}, px[index]+10*math.Sin(float64(spriteIndex)*.07+float64(i)), py[index]+5*math.Cos(float64(spriteIndex)*.09+float64(i)), 1, 1)
-		}
+		spriteTrain.Draw(main)
 		s.transform(s.Canvas, main, 64, 64, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 	}
 }
