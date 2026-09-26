@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/geometry"
+	"github.com/olivierh59500/democonstructionkit/modulation"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -74,24 +75,16 @@ func (s *Scene) starwars() {
 		return
 	}
 	s.closeEffects = append(s.closeEffects, crawl.Close)
-	depth, rotation, fade := 0.0, 180.0, 0.0
-	flash := 0
+	depth, rotation := 0.0, 180.0
+	flashClock, err := modulation.NewPeriodicDecay(presets.CuddlyStarwarsFlash())
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		main.Clear()
-		flash++
-		if flash > 300 {
-			flash = 0
-		}
-		if flash == 280 {
-			fade = 20
-		}
-		if fade > 0 {
-			fade -= .5
-		} else {
-			fade = 0
-		}
-		s.transform(main, background, 30, 10, 1, 1, 0, 0, 0, fade*.05, ebiten.BlendSourceOver)
+		s.transform(main, background, 30, 10, 1, 1, 0, 0, 0, flashClock.Step(), ebiten.BlendSourceOver)
 		depth += 1.5
 		rotation -= .02
 		field.SetView(sprites.FieldView{Camera: geometry.Camera{Center: geometry.Vec2{X: 160, Y: 100}, Focal: 128, Near: math.SmallestNonzeroFloat64}, Offset: geometry.Vec3{Z: -depth}, Angle: rotation})
