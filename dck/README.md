@@ -42,6 +42,10 @@ snapping are editable; a pure DCK test compares all positions over 400 ticks.
 Megaball's two interleaved nineteen-ball series also use `sprites.Group`.
 `motion.CoupledOrbitFormation` retains the exact per-ball phase stepping and
 range order, while the nine original controls edit its owned orbit each tick.
+Spreadpoint and Fullscreen now compose their raster-filled logos with
+`composite.SurfaceLayer` using their existing 128×128 and 768×52 surfaces.
+Spreadpoint edits the two logo passes' position and scale each tick and keeps
+the authored first-frame filter change.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames

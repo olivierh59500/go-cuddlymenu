@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
+	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
@@ -31,10 +32,16 @@ func (s *Scene) spreadpoint() {
 		cards = append(cards, s.asset(fmt.Sprintf("intro%d.png", i)))
 	}
 	in, out, raster, font, gradient, dnaFont, dnaGradient, ball := s.asset("tcb-in.png"), s.asset("tcb-out.png"), s.asset("tcb-raster.png"), s.asset("font.png"), s.asset("gradient.png"), s.asset("font_dna.png"), s.asset("gradient_dna.png"), s.asset("ball.png")
-	main, logo, spread, dnaText := s.surface(416, 276), s.surface(128, 128), s.surface(320, 200), s.surface(320, 25)
+	main, spread, dnaText := s.surface(416, 276), s.surface(320, 200), s.surface(320, 25)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	// Stretch single-pixel ramps without sampling transparent side padding.
 	s.filters[spread] = ebiten.FilterNearest
+	logoLayer, err := composite.NewSurfaceLayer(presets.CuddlySpreadpointLogoLayer(in, raster, out))
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, logoLayer.Close)
 	grid := s.bitmap(font, "cuddly-spreadpoint", ebiten.FilterLinear)
 	bandsConfig := presets.CuddlySpreadpointBands(grid, s.data.Strings["text"])
 	bands, err := scrolling.New(scrolling.Config{Bands: &bandsConfig})
@@ -134,13 +141,19 @@ func (s *Scene) spreadpoint() {
 		angle := angles[iteration%len(angles)]
 		y, z := math.Sin(angle), math.Cos(angle)/4+.75
 		x := 64 - 64*z
-		logo.Clear()
-		s.transform(logo, in, x, 45+40*y, z, z, 0, 0, 0, 1, ebiten.BlendSourceOver)
-		s.filters[logo] = ebiten.FilterNearest
-		s.transform(logo, raster, 0, 0, 128, 1, 0, 0, 0, 1, ebiten.BlendSourceIn)
-		s.filters[logo] = ebiten.FilterLinear
-		s.transform(logo, out, x, 45+40*y, z, z, 0, 0, 0, 1, ebiten.BlendSourceOver)
-		s.draw(main, logo, 148, 29)
+		if err := logoLayer.SetPassTransform(0, x, 45+40*y, z, z, 0); err != nil {
+			s.err = err
+			return
+		}
+		if err := logoLayer.SetPassTransform(2, x, 45+40*y, z, z, 0); err != nil {
+			s.err = err
+			return
+		}
+		logoLayer.Draw(main)
+		if err := logoLayer.SetPassFilter(0, ebiten.FilterLinear); err != nil {
+			s.err = err
+			return
+		}
 		if iteration >= 1952 {
 			dnaText.Clear()
 			r.Step()

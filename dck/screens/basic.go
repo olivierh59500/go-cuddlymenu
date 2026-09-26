@@ -197,7 +197,7 @@ func (s *Scene) bigSprite() {
 
 func (s *Scene) fullscreen() {
 	background, logo, raster, font := s.asset("backdrop.png"), s.asset("tcblogo.png"), s.asset("colourbar.png"), s.asset("font-fullscreen.png")
-	off, scroll := s.surface(768, 52), s.surface(768, 536)
+	scroll := s.surface(768, 536)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	decor, err := composite.NewBackground(composite.BackgroundConfig{Source: image.Rect(0, 0, 16, background.Bounds().Dy()), PeriodX: 16, Filter: ebiten.FilterNearest})
 	if err != nil {
@@ -210,6 +210,12 @@ func (s *Scene) fullscreen() {
 		Pose:      composite.BackgroundPose{Y: 52},
 		VelocityX: -4 * TicksPerSecond,
 	}
+	logoLayer, err := composite.NewSurfaceLayer(presets.CuddlyFullscreenLogoLayer(logo, raster))
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, logoLayer.Close)
 	fontGrid := s.bitmap(font, "cuddly-fullscreen", s.filters[scroll])
 	rings := make([]scrolling.RingConfig, 7)
 	for i := 0; i < 7; i++ {
@@ -244,7 +250,6 @@ func (s *Scene) fullscreen() {
 	s.render = func() {
 		clearBlack(s.Canvas)
 		scroll.Clear()
-		off.Clear()
 		s.err = backgroundScroll.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond})
 		if s.err != nil {
 			return
@@ -262,9 +267,7 @@ func (s *Scene) fullscreen() {
 			return
 		}
 		s.Canvas.SubImage(image.Rect(0, 0, 768, 52)).(*ebiten.Image).Fill(color.Black)
-		s.transform(off, logo, 95, 5, 1.3, 1.3, 0, 0, 0, 1, ebiten.BlendSourceOver)
-		s.transform(off, raster, 0, 0, 1, 1.2, 0, 0, 0, 1, ebiten.BlendSourceAtop)
-		s.draw(s.Canvas, off, 0, 0)
+		logoLayer.Draw(s.Canvas)
 	}
 }
 
