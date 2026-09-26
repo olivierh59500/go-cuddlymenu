@@ -39,6 +39,9 @@ Images, fonts, phases, sizes and layer order remain production parameters.
 Spreadpoint's twenty balls now use `sprites.Group` with a compiled X/Y formula.
 The time and index divisors, sine frequencies, amplitudes and optional pixel
 snapping are editable; a pure DCK test compares all positions over 400 ticks.
+Megaball's two interleaved nineteen-ball series also use `sprites.Group`.
+`motion.CoupledOrbitFormation` retains the exact per-ball phase stepping and
+range order, while the nine original controls edit its owned orbit each tick.
 Big Sprite colors its scrolling text with `composite.RasterOverlay` using
 source-atop blending; Starwars uses the same effect with source-in blending and
 a different wrap rule. Their 15-second captures match all 900 original frames

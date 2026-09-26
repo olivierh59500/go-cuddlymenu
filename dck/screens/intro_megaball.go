@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/presets"
@@ -82,7 +83,11 @@ func (s *Scene) megaball() {
 	params := []int{251, 246, 1, 4, 5, -10, -1, -2, 1}
 	selected, blink := 8, 0
 	locations := [][2]float64{{272, 53}, {272, 45}, {272, 37}, {176, 53}, {176, 45}, {176, 37}, {80, 53}, {80, 45}, {80, 37}}
-	orbit := motion.CoupledOrbit{CenterX: 192, CenterY: 135, Radius: 60, DepthRadius: 30, PhaseStep: .00025}
+	ballGroup, err := sprites.NewGroup(presets.CuddlyMegaballFormation(ball))
+	if err != nil {
+		s.err = err
+		return
+	}
 	scrollBounce, err := motion.NewWaveClock(presets.RectifiedSine(112, -66, .04))
 	if err != nil {
 		s.err = err
@@ -122,14 +127,14 @@ func (s *Scene) megaball() {
 			}
 			grid.Print(half, fmt.Sprintf("%s %s%03d", labels[i], sign, int(math.Abs(float64(value)))), loc[0]-48, loc[1]-7, 1, 1)
 		}
+		orbit := ballGroup.CoupledOrbitController().Orbit()
 		orbit.XIncrement, orbit.YIncrement, orbit.ZIncrement, orbit.QIncrement = float64(params[8]), float64(params[7]), float64(params[6]), float64(params[5])
 		orbit.XOffset, orbit.YOffset, orbit.ZOffset, orbit.QOffset, orbit.QScale = float64(params[4]), float64(params[3]), float64(params[2]), float64(params[1]), float64(params[0])
-		for _, start := range []int{0, 40} {
-			for i := start; i < start+19; i++ {
-				x, y := orbit.Next(float64(i))
-				s.transform(half, ball, x, y, 1, 1, 0, float64(ball.Bounds().Dx()/2), float64(ball.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
-			}
+		if err := ballGroup.Update(kit.Frame{}); err != nil {
+			s.err = err
+			return
 		}
+		ballGroup.Draw(half)
 		s.transform(s.Canvas, half, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 	}
 }
