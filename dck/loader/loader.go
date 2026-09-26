@@ -4,11 +4,11 @@ package loader
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/olivierh59500/democonstructionkit/presets"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/olivierh59500/democonstructionkit/assets"
+	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/timeline"
 	media "go-cuddlymenu/assets/cuddly"
@@ -29,6 +29,7 @@ type Screen struct {
 	spec             Spec
 	countdown        *timeline.Countdown
 	clock            *timeline.CueClock
+	gain             *timeline.CueRamp
 	store            *assets.Store
 	background, text *ebiten.Image
 	font             scrolling.BitmapGrid
@@ -71,7 +72,11 @@ func NewAtRate(name string, rate int) (*Screen, error) {
 	if err != nil {
 		return nil, err
 	}
-	l := &Screen{spec: spec, countdown: countdown, clock: clock, store: assets.New(media.Files), Canvas: ebiten.NewImage(Width, Height), text: ebiten.NewImage(640, 16)}
+	gain, err := timeline.NewCueRamp(clock, timeline.CueRampConfig{Window: fadeCue, From: 1, To: 0})
+	if err != nil {
+		return nil, err
+	}
+	l := &Screen{spec: spec, countdown: countdown, clock: clock, gain: gain, store: assets.New(media.Files), Canvas: ebiten.NewImage(Width, Height), text: ebiten.NewImage(640, 16)}
 	load := func(name string) *ebiten.Image {
 		img, e := l.store.Texture("menu/resources/" + name)
 		if e != nil {
@@ -107,11 +112,9 @@ func (l *Screen) Counters() (sector, blipps int) {
 	state := l.countdown.At(l.clock.Tick())
 	return state.First, state.Second
 }
-func (l *Screen) Blank() bool { return l.countdown.At(l.clock.Tick()).Blank }
-func (l *Screen) Done() bool  { return l.Blank() && l.clock.Done(blackCue) }
-func (l *Screen) Volume() float64 {
-	return max(0, 1-l.clock.Elapsed(fadeCue)/fadeSeconds)
-}
+func (l *Screen) Blank() bool     { return l.countdown.At(l.clock.Tick()).Blank }
+func (l *Screen) Done() bool      { return l.Blank() && l.clock.Done(blackCue) }
+func (l *Screen) Volume() float64 { return l.gain.Value() }
 func (l *Screen) SetTickRate(rate int) error {
 	rate, err := timing.Normalize(rate)
 	if err != nil {
