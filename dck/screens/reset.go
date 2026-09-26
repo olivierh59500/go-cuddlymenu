@@ -1,8 +1,6 @@
 package screens
 
 import (
-	"math"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/composite"
@@ -41,16 +39,16 @@ func (s *Scene) reset() {
 		s.err = err
 		return
 	}
-	index := 12.0
-	offset := 0.0
+	backdropPath, err := motion.NewFormulaTrajectory(presets.CuddlyResetBackdropTrajectory())
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.music("", false)
 	drawBack := func() {
-		angle := 2 * math.Pi / 384 * index
-		x := 335 - 220*math.Sin(angle)*math.Sin(offset)
-		y := 250 + 170*math.Sin(angle+math.Pi/3)
-		s.transform(back, backdrop, x, y, 1, 1, 0, float64(backdrop.Bounds().Dx()/2), float64(backdrop.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
-		index++
-		offset = math.Mod(offset+math.Pi/32, 2*math.Pi)
+		position := backdropPath.Position()
+		s.transform(back, backdrop, position.X, position.Y, 1, 1, 0, float64(backdrop.Bounds().Dx()/2), float64(backdrop.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
+		backdropPath.Step()
 	}
 	maskScroll := func() {
 		s.draw(merge, scroll, 0, 70)
