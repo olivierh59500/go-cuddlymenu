@@ -30,6 +30,18 @@ func (g *Game) UseTouchControls() {
 }
 
 func (g *Game) Close() error {
+	if g.crt != nil {
+		g.crt.Close()
+		g.crt = nil
+	}
+	if g.screenCanvas != nil {
+		g.screenCanvas.Deallocate()
+		g.screenCanvas = nil
+	}
+	if g.crtCanvas != nil {
+		g.crtCanvas.Deallocate()
+		g.crtCanvas = nil
+	}
 	if g.background != nil {
 		g.background.Close()
 		g.background = nil

@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/olivierh59500/democonstructionkit/composite"
+	"github.com/olivierh59500/democonstructionkit/effects"
 	"github.com/olivierh59500/democonstructionkit/motion"
 	"github.com/olivierh59500/democonstructionkit/sound"
 	audio "github.com/olivierh59500/democonstructionkit/sound/output"
@@ -101,8 +102,8 @@ type Game struct {
 	simTime      float64
 	carebearTime float64
 
-	crtShader *ebiten.Shader
-	useCRT    bool
+	crt    *effects.CRTOverlay
+	useCRT bool
 
 	layoutWidth   int
 	touchIDs      []ebiten.TouchID
@@ -216,15 +217,17 @@ func newUnmanagedImage(width, height int) *ebiten.Image {
 }
 
 func (g *Game) initCRT() {
-	if g.crtShader != nil {
+	if g.crt != nil {
 		return
 	}
-	shader, err := ebiten.NewShader([]byte(crtShaderSrc))
+	config := presets.ClassicCRTOverlay()
+	config.Blend = ebiten.BlendCopy
+	crt, err := effects.NewCRTOverlay(config)
 	if err != nil {
 		log.Printf("failed to compile CRT shader: %v", err)
 		return
 	}
-	g.crtShader = shader
+	g.crt = crt
 	g.screenCanvas = newUnmanagedImage(screenWidth, screenHeight)
 	g.crtCanvas = newUnmanagedImage(screenWidth, screenHeight)
 }
@@ -245,7 +248,7 @@ func (g *Game) Update() error {
 		g.useCRT = !g.useCRT
 		if g.useCRT {
 			g.initCRT()
-			if g.crtShader == nil {
+			if g.crt == nil {
 				g.useCRT = false
 			}
 		}
@@ -288,10 +291,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if g.useCRT {
 		g.screenCanvas.Fill(color.Black)
 		g.drawScene(g.screenCanvas, 0)
-		op := &ebiten.DrawRectShaderOptions{}
-		op.Images[0] = g.screenCanvas
-		op.Blend = ebiten.BlendCopy
-		g.crtCanvas.DrawRectShader(screenWidth, screenHeight, g.crtShader, op)
+		g.crt.DrawAt(g.crtCanvas, g.screenCanvas, 0, 0)
 
 		var drawOp ebiten.DrawImageOptions
 		drawOp.GeoM.Translate(float64(sceneX), 0)
@@ -678,45 +678,3 @@ func maxTileIndex(mapData [][]int) int {
 }
 
 func BuildScrollMap(text string) []int { return presets.CuddlyChromeTiles(text) }
-
-const crtShaderSrc = `
-package main
-
-func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
-	var uv vec2
-	uv = texCoord
-
-	// Barrel distortion
-	var dc vec2
-	dc = uv - 0.5
-	dc = dc * (1.0 + dot(dc, dc) * 0.15)
-	uv = dc + 0.5
-
-	if uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 {
-		return vec4(0.0, 0.0, 0.0, 1.0)
-	}
-
-	var col vec4
-	col = imageSrc0At(uv)
-
-	// Scanlines
-	var scanline float
-	scanline = sin(uv.y * 800.0) * 0.04
-	col.rgb = col.rgb - scanline
-
-	// RGB shift
-	var rShift float
-	var bShift float
-	rShift = imageSrc0At(uv + vec2(0.002, 0.0)).r
-	bShift = imageSrc0At(uv - vec2(0.002, 0.0)).b
-	col.r = rShift
-	col.b = bShift
-
-	// Vignette
-	var vignette float
-	vignette = 1.0 - dot(dc, dc) * 0.5
-	col.rgb = col.rgb * vignette
-
-	return col * color
-}
-`

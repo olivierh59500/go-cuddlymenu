@@ -8,20 +8,20 @@ import (
 
 func TestNewGameDefersCRTResources(t *testing.T) {
 	game := NewGame()
-	if game.crtShader != nil || game.screenCanvas != nil || game.crtCanvas != nil {
+	if game.crt != nil || game.screenCanvas != nil || game.crtCanvas != nil {
 		t.Fatal("CRT resources must not be allocated before the effect is enabled")
 	}
 
 	game.initCRT()
-	if game.crtShader == nil || game.screenCanvas == nil || game.crtCanvas == nil {
+	if game.crt == nil || game.screenCanvas == nil || game.crtCanvas == nil {
 		t.Fatal("initCRT did not create every CRT resource")
 	}
 
-	shader := game.crtShader
+	crt := game.crt
 	screenCanvas := game.screenCanvas
 	crtCanvas := game.crtCanvas
 	game.initCRT()
-	if game.crtShader != shader || game.screenCanvas != screenCanvas || game.crtCanvas != crtCanvas {
+	if game.crt != crt || game.screenCanvas != screenCanvas || game.crtCanvas != crtCanvas {
 		t.Fatal("initCRT must be idempotent")
 	}
 

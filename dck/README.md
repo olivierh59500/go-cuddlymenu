@@ -24,6 +24,7 @@ leaves a screen, RESET starts the reset demo and SCREENS opens the selector. The
 
 ```sh
 ./scripts/run-cuddlydemo-android.sh
+./scripts/run-android.sh --dck       # Menu-only DCK application.
 ```
 
 The separate application is **Cuddly Demo (DCK)**, package
@@ -138,6 +139,16 @@ are gone from the DCK menu.
 The character/map camera now uses `motion.CameraFollow` with independent world
 bounds, viewport size and sprite anchor. Its previous three-branch X/Y camera
 calculation is removed from the DCK menu.
+The optional desktop C-key CRT pass now uses `effects.CRTOverlay` and the editable
+`presets.ClassicCRTOverlay` recipe. Copy blending preserves the old pass's
+transparent-edge behavior. Complete GPU captures at menu ticks 0, 60 and 240
+each differ from the former local shader at one red-channel sampling pixel;
+the rest of every frame matches. The CRT shader remains lazily allocated and
+is released when the menu closes.
+The menu-only DCK APK was reinstalled on a Pixel 10a. With CRT disabled by
+default, 744 distinct presented-frame intervals had p95 16.762 ms, maximum
+16.926 ms and none above 20 ms. This short device run does not benchmark the
+optional CRT pass.
 The rectified `motion.WaveClock` now drives the Digi logo/text, LED logo/text,
 Megaball text and Ehhh roller. Ehhh keeps its text-controlled tempo and cycle
 reset. Starwars uses the same `motion.Wave` form in its sampled text profile.
