@@ -56,15 +56,22 @@ func (s *Scene) ehh() {
 		s.err = err
 		return
 	}
-	phase := 0.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 384, Y: 270}, motion.Point{X: 135, Y: 200})
+	backgroundPath, err := motion.NewTrajectoryClock(motion.TrajectoryClockConfig{Sample: orbit.At, Step: .006})
+	if err != nil {
+		s.err = err
+		return
+	}
 	s.render = func() {
 		clearBlack(s.Canvas)
 		a.Clear()
 		b.Clear()
 		c.Clear()
-		phase += .006
-		position := orbit.At(phase)
+		if err := backgroundPath.Step(); err != nil {
+			s.err = err
+			return
+		}
+		position := backgroundPath.At()
 		s.transform(s.Canvas, background, position.X, position.Y, 1, 1, 0, float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
 		s.draw(s.Canvas, main, 0, 0)
 		if err := barGroup.Update(kit.Frame{Time: float64(s.frame)}); err != nil {

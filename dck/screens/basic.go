@@ -149,9 +149,12 @@ func (s *Scene) bigSprite() {
 	for _, name := range []string{"s", "r", "a", "e", "b", "e", "r", "a", "c", "e", "h", "t"} {
 		letters = append(letters, s.asset(name+".png"))
 	}
-	// Start the movement cycle at the authored nine-step phase offset.
-	phase := 9.0
 	orbit := motion.DefaultNestedOrbit(motion.Point{X: 320, Y: 200}, motion.Point{X: 160, Y: 400 / 3.7})
+	facePath, err := motion.NewTrajectoryClock(motion.TrajectoryClockConfig{Sample: orbit.At, Start: 9, Step: .008})
+	if err != nil {
+		s.err = err
+		return
+	}
 	face, err := sprites.NewAxisFlip(sprites.AxisFlipConfig{
 		Front: front, Back: back, SwitchAt: .01, BackAngle: 180,
 		Motion:     motion.BounceBankConfig{Start: []float64{1}, Velocity: []float64{-.02}, Min: -1, Max: 1, Inclusive: true, Directional: true},
@@ -188,8 +191,11 @@ func (s *Scene) bigSprite() {
 		}
 		field.Draw(starCanvas)
 		s.transform(stage, starCanvas, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
-		phase += .008
-		position := orbit.At(phase)
+		if err := facePath.Step(); err != nil {
+			s.err = err
+			return
+		}
+		position := facePath.At()
 		face.DrawAt(stage, position.X, position.Y)
 		face.Step()
 		letterGroup.Draw(stage)

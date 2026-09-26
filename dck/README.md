@@ -147,6 +147,9 @@ Big Sprite's front/back emblem now uses `sprites.AxisFlip` with the original
 threshold, signed scale and face angle. Sixteen checkpoints around the face
 changes and bounce boundaries remain pixel-identical after snapping each
 face's odd-sized anchor to its original integer center.
+Its orbital position and Ehhh's moving backdrop now use `motion.TrajectoryClock`.
+The path samples are cached once per update, and both keep their original
+advance-before-draw phase, including Big Sprite's starting offset of nine.
 The Digi, Ehhh and introduction row-profile tables now come from editable DCK
 wave programs. Their overlapping writes, zero lead-ins and source-phase offsets
 are compiled once at setup. Thirty checkpoints, including late wraps,
