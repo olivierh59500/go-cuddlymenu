@@ -69,8 +69,15 @@ func (s *Scene) megaScroller() {
 		return
 	}
 	s.closeEffects = append(s.closeEffects, backdrop.Close)
-	for i := 0; i < 48; i++ {
-		s.draw(mask, bars, float64(i*8), 0)
+	maskTiles, err := composite.NewBackground(presets.CuddlyMegaScrollerMaskTiles())
+	if err != nil {
+		s.err = err
+		return
+	}
+	maskTiles.DrawAt(mask, bars, 0, 0)
+	if err := maskTiles.Err(); err != nil {
+		s.err = err
+		return
 	}
 	maskMaterial, err := composite.NewRasterOverlay(presets.CuddlyMegaScrollerMask(mask))
 	if err != nil {

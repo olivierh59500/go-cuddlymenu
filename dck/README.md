@@ -65,6 +65,9 @@ Mega Scroller and LED Scroller now share `composite.TiledWaveBackdrop` for their
 cached tile fields and row waves. LED selects a retained moving source and
 keeps its explicit one-frame preload; Mega Scroller draws its two waves directly.
 Their source sizes and output surfaces are unchanged.
+Mega Scroller's 48 overlapping white-bar mask draws now use a bounded
+`composite.Background` configuration; only the 40 visible copies are submitted
+in the same order.
 LED Scroller's 11-color, 2,000-row raster now comes from DCK's configurable
 uniform gradient material with the original center sampling and rounding.
 The 125 orange discs now use `sprites.RotatingDiscCloud` for their shared
