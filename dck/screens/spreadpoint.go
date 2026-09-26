@@ -3,7 +3,6 @@ package screens
 import (
 	"fmt"
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -12,6 +11,7 @@ import (
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
+	"github.com/olivierh59500/democonstructionkit/timeline"
 )
 
 func (s *Scene) feedback(width, height, speedX, speedY, direction int, insertY float64, profile []float64) *scrolling.FeedbackDNA {
@@ -73,46 +73,36 @@ func (s *Scene) spreadpoint() {
 		s.err = err
 		return
 	}
+	introCards, err := timeline.NewTintedCards(presets.CuddlySpreadpointCards())
+	if err != nil {
+		s.err = err
+		return
+	}
 	white := s.surface(1, 1)
 	white.Fill(color.White)
-	intro, iteration := 0, 0
+	introDone, iteration := false, 0
 	s.music("intro1.mp3", false)
 	s.render = func() {
-		if intro < 4 {
-			red, green := 0, 0
-			switch {
-			case iteration < 20:
-				red = int(math.Floor(float64(iteration) * 255 / 19))
-				green = red
-				iteration++
-			case iteration < 160:
-				red = 255
-				green = int(math.Floor(34 + float64(159-iteration)*221/139))
-				iteration++
-			case iteration < 180:
-				n := iteration - 160
-				red = int(math.Floor(float64(19-n) * 255 / 19))
-				green = int(math.Floor(float64(19-n) * 34 / 19))
-				iteration++
-			default:
-				iteration = 0
-				intro++
-				if intro < 4 {
-					s.music(fmt.Sprintf("intro%d.mp3", intro+1), false)
-				} else {
+		if !introDone {
+			frame := introCards.Next()
+			if frame.Cue >= 0 {
+				if frame.Completed {
 					s.music("master.mp3", true)
+				} else {
+					s.music(fmt.Sprintf("intro%d.mp3", frame.Cue+1), false)
 				}
 			}
 			main.Clear()
-			if intro < 4 {
-				s.draw(main, cards[intro], 0, 0)
+			if !frame.Completed {
+				s.draw(main, cards[frame.Card], 0, 0)
 				op := ebiten.DrawImageOptions{Blend: ebiten.BlendSourceAtop}
 				op.GeoM.Scale(416, 276)
-				op.ColorScale.Scale(float32(red)/255, float32(green)/255, float32(green)/255, 1)
+				op.ColorScale.Scale(float32(frame.Tint.R)/255, float32(frame.Tint.G)/255, float32(frame.Tint.B)/255, float32(frame.Tint.A)/255)
 				main.DrawImage(white, &op)
 			}
 			clearBlack(s.Canvas)
 			s.transform(s.Canvas, main, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
+			introDone = frame.Completed
 			return
 		}
 		clearBlack(main)
@@ -159,4 +149,3 @@ func (s *Scene) spreadpoint() {
 		iteration++
 	}
 }
-func roundHalfUp(v float64) float64 { return math.Floor(v + .5) }
