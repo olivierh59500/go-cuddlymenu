@@ -52,6 +52,15 @@ already running screen. Thermal status remained 0. Across 71 windows of 250
 updates, the highest mean CPU Update time was 4.474 ms in the introduction
 and Draw submission was at most 3.044 ms in the menu. Sparse presentation
 samples and CPU submission times do not measure battery use or every frame.
+The longer one-minute-per-screen Pixel tour reached Reset and the final menu
+before ending. PixelProbe collected 407 sparse windows over 905.59 seconds:
+25,234 distinct presentation intervals covering 421.22 seconds of frame
+history, p95 16.733 ms. Three intervals exceeded 20 ms (maximum 83.465 ms),
+all during loading/menu handoffs rather than within an already running screen.
+Twenty-one memory snapshots over the last ten minutes reached at most
+595,053 KiB process PSS and 317,992 KiB graphics memory. These are sampled
+maxima, not peaks; Android thermal status stayed 0 and the battery indicator
+remained at 80%, which does not establish energy consumption.
 
 Assets live directly under `assets/cuddly/<screen>/`; common replacement tracks
 are in `assets/cuddly/ym/`. `data.json` contains native screen text and movement
