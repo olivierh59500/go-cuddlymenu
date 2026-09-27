@@ -41,6 +41,17 @@ adb shell am start -S -W -n com.olivierh.cuddlydemo/.MainActivity \
 Each duration accepts 1–600 seconds. The route logs each
 `cuddly_tour screen=...` handoff for Pixel performance analysis. The ordinary
 touch-controlled application remains the default when these extras are absent.
+On Pixel 10a, this six-second route visited the introduction, all thirteen
+doors, Reset and the final menu before ending normally. PixelProbe used
+`-allow-end` and retained 127 of 170 requested sample windows: 7,874 distinct
+presented intervals covering about 132 seconds over 282 elapsed seconds. Its
+p95 was 16.736 ms; four intervals exceeded 20 ms, with a 200.307 ms maximum.
+All four were within 24–68 ms of loading-card handoffs into Ehhh, Mega
+Scroller, Starwars or Megaball. No sampled slow interval occurred inside an
+already running screen. Thermal status remained 0. Across 71 windows of 250
+updates, the highest mean CPU Update time was 4.474 ms in the introduction
+and Draw submission was at most 3.044 ms in the menu. Sparse presentation
+samples and CPU submission times do not measure battery use or every frame.
 
 Assets live directly under `assets/cuddly/<screen>/`; common replacement tracks
 are in `assets/cuddly/ym/`. `data.json` contains native screen text and movement
