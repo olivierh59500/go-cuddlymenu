@@ -8,11 +8,16 @@ import (
 	"go-cuddlymenu/dck/screens"
 )
 
+var host = mobilehost.New("menu")
+
 func init() {
 	ebiten.SetTPS(screens.TicksPerSecond)
 	ebiten.SetScreenClearedEveryFrame(false)
-	enginemobile.SetGame(mobilehost.New("menu"))
+	enginemobile.SetGame(host)
 }
+
+// ConfigureCRT enables the optional menu material for device profiling.
+func ConfigureCRT(enabled bool) { host.ConfigureMenuCRT(enabled) }
 
 // Dummy forces gomobile to include this package in the Android binding.
 func Dummy() {}

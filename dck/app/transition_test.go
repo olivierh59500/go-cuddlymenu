@@ -48,3 +48,35 @@ func TestTouchNavigationUsesPixelSideMargins(t *testing.T) {
 		}
 	}
 }
+
+func TestTouchCRTControlTracksMenuState(t *testing.T) {
+	g, err := New(Config{Muted: true, TouchControls: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+	g.Layout(2424, 1080)
+	findCRT := func() string {
+		for _, b := range g.buttons() {
+			if b.action == "crt" {
+				return b.label
+			}
+		}
+		return ""
+	}
+	if got := findCRT(); got != "CRT OFF" {
+		t.Fatalf("initial menu button = %q, want CRT OFF", got)
+	}
+	if !g.menu.SetCRT(true) {
+		t.Fatal("could not enable the CRT material")
+	}
+	if got := findCRT(); got != "CRT ON" {
+		t.Fatalf("enabled menu button = %q, want CRT ON", got)
+	}
+	if err := g.open("intro"); err != nil {
+		t.Fatal(err)
+	}
+	if got := findCRT(); got != "" {
+		t.Fatalf("CRT button is shown over a demo screen: %q", got)
+	}
+}

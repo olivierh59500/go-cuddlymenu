@@ -28,6 +28,7 @@ public final class MainActivity extends Activity {
                 getIntent().getBooleanExtra("metrics", false),
                 getIntent().getIntExtra("startFrame", 0),
                 getIntent().getIntExtra("hz", 0));
+        Mobile.configureCRT(getIntent().getBooleanExtra("dck_crt", false));
         int tourSeconds = getIntent().getIntExtra("dck_tour_seconds", 0);
         if (tourSeconds > 0 && !Mobile.configureTour(
                 getIntent().getIntExtra("dck_tour_intro_seconds", 10),

@@ -9,6 +9,7 @@ import android.view.WindowInsetsController;
 import android.view.WindowManager;
 
 import com.olivierh.cuddlymenu.mobile.EbitenView;
+import com.olivierh.cuddlymenu.mobile.Mobile;
 
 import go.Seq;
 
@@ -20,6 +21,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         Seq.setContext(getApplicationContext());
+        Mobile.configureCRT(getIntent().getBooleanExtra("dck_crt", false));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams attributes = getWindow().getAttributes();

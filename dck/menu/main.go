@@ -245,13 +245,7 @@ func (g *Game) Update() error {
 		g.Reset()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
-		g.useCRT = !g.useCRT
-		if g.useCRT {
-			g.initCRT()
-			if g.crt == nil {
-				g.useCRT = false
-			}
-		}
+		g.SetCRT(!g.useCRT)
 	}
 
 	if g.loading.Active {

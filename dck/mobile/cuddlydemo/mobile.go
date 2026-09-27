@@ -26,6 +26,9 @@ func ConfigureAtRate(screen string, metrics bool, startFrame, rate int) {
 	host.ConfigureAtRate(screen, metrics, startFrame, rate)
 }
 
+// ConfigureCRT enables the optional menu material for device profiling.
+func ConfigureCRT(enabled bool) { host.ConfigureMenuCRT(enabled) }
+
 // ConfigureTour enables an unattended complete route with editable dwell
 // times. Call it after ConfigureAtRate and before Android starts its view.
 func ConfigureTour(introSeconds, screenSeconds, menuSeconds int) bool {

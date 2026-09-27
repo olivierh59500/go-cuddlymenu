@@ -22,6 +22,22 @@ func (g *Game) UseExternalAudio()                     { g.audioReady = true }
 func (g *Game) SetScreenHandler(handler func(string)) { g.screenHandler = handler }
 func (g *Game) IsLoading() bool                       { return g.loading.Active }
 
+// SetCRT selects the optional menu pass. Its shader and surface are prepared
+// once on first use; a failed compilation leaves the original rendering active.
+func (g *Game) SetCRT(enabled bool) bool {
+	if enabled {
+		g.initCRT()
+		if g.crt == nil {
+			g.useCRT = false
+			return false
+		}
+	}
+	g.useCRT = enabled
+	return true
+}
+
+func (g *Game) CRTEnabled() bool { return g.useCRT }
+
 func (g *Game) UseTouchControls() {
 	if !g.virtualControlsVisible() {
 		g.controlUI = newControlSprites()

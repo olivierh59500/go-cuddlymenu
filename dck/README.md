@@ -21,6 +21,10 @@ selects the comparison rate without changing the music tempo.
 On Android the existing pad moves the character. ENTER opens the door, MENU
 leaves a screen, RESET starts the reset demo and SCREENS opens the selector. The
 60 HZ / 50 HZ button changes animation speed without restarting the scene.
+The menu's CRT OFF / CRT ON button toggles the optional CRT material without
+affecting the controls or other screens. It starts off by default; `C` toggles
+the same material on desktop. For device profiling, the Android activities also
+accept `--ez dck_crt true` at launch.
 
 ```sh
 ./scripts/run-cuddlydemo-android.sh
@@ -176,7 +180,7 @@ are gone from the DCK menu.
 The character/map camera now uses `motion.CameraFollow` with independent world
 bounds, viewport size and sprite anchor. Its previous three-branch X/Y camera
 calculation is removed from the DCK menu.
-The optional desktop C-key CRT pass now uses `effects.CRTOverlay` and the editable
+The optional menu CRT pass now uses `effects.CRTOverlay` and the editable
 `presets.ClassicCRTOverlay` recipe. Copy blending preserves the old pass's
 transparent-edge behavior. Complete GPU captures at menu ticks 0, 60 and 240
 each differ from the former local shader at one red-channel sampling pixel;
@@ -184,8 +188,9 @@ the rest of every frame matches. The CRT shader remains lazily allocated and
 is released when the menu closes.
 The menu-only DCK APK was reinstalled on a Pixel 10a. With CRT disabled by
 default, 744 distinct presented-frame intervals had p95 16.762 ms, maximum
-16.926 ms and none above 20 ms. This short device run does not benchmark the
-optional CRT pass.
+16.926 ms and none above 20 ms. With CRT enabled, another 744 intervals had
+p95 16.726 ms, maximum 16.874 ms and none above 20 ms. These short runs check
+presentation timing, not long-term battery use.
 The rectified `motion.WaveClock` now drives the Digi logo/text, LED logo/text,
 Megaball text and Ehhh roller. Ehhh keeps its text-controlled tempo and cycle
 reset. Starwars uses the same `motion.Wave` form in its sampled text profile.

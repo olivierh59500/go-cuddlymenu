@@ -23,7 +23,8 @@ Build and install the complete Android application on one authorized USB device:
 ```
 
 The app is **Cuddly Demo (DCK)** (`com.olivierh.cuddlydemo`). Its touch controls
-provide movement/thrust, ENTER, MENU, RESET, SCREENS and the rate selector.
+provide movement/thrust, ENTER, MENU, RESET, SCREENS, the rate selector and a
+CRT OFF / CRT ON button in the menu.
 The original standalone Android menu uses `./scripts/run-android.sh`.
 
 See [the native DCK entry points](dck/README.md) for screen selection, asset layout

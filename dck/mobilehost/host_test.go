@@ -63,6 +63,7 @@ func TestMobileComparisonRateReachesLaunchRequest(t *testing.T) {
 func TestTourRequestKeepsAndroidRateAndMetrics(t *testing.T) {
 	host := New("intro")
 	host.ConfigureAtRate("dna", true, 12, 50)
+	host.ConfigureMenuCRT(true)
 	if host.ConfigureTour(0, 6, 1) {
 		t.Fatal("accepted a zero-length introduction")
 	}
@@ -71,7 +72,7 @@ func TestTourRequestKeepsAndroidRateAndMetrics(t *testing.T) {
 	}
 	select {
 	case request := <-host.requests:
-		if request.rate != 50 || !request.metrics || request.warmup != 12 || request.tour == nil ||
+		if request.rate != 50 || !request.metrics || request.warmup != 12 || !request.crt || request.tour == nil ||
 			request.tour.IntroDuration != 10*time.Second ||
 			request.tour.ScreenDuration != 6*time.Second ||
 			request.tour.MenuDuration != time.Second {

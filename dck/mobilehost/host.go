@@ -15,6 +15,7 @@ type request struct {
 	metrics bool
 	warmup  int
 	rate    int
+	crt     bool
 	tour    *app.TourOptions
 }
 type Host struct {
@@ -51,6 +52,18 @@ func (h *Host) ConfigureAtRate(screen string, metrics bool, warmup, rate int) {
 	h.requests <- r
 }
 
+// ConfigureMenuCRT selects the optional menu material before Android creates
+// the game. It preserves another queued screen, rate or tour request.
+func (h *Host) ConfigureMenuCRT(enabled bool) {
+	r := request{screen: h.first}
+	select {
+	case r = <-h.requests:
+	default:
+	}
+	r.crt = enabled
+	h.requests <- r
+}
+
 // ConfigureTour queues an unattended route on the UI thread. It retains any
 // preceding rate/metrics request and builds the tour in Update, on the graphics
 // thread. Durations are seconds and remain independent of the 50/60 Hz rate.
@@ -84,12 +97,12 @@ func (h *Host) Update() error {
 		var err error
 		if r.tour != nil {
 			var tour *app.Tour
-			tour, err = app.NewTour(app.Config{TickRate: r.rate}, *r.tour)
+			tour, err = app.NewTour(app.Config{TickRate: r.rate, MenuCRT: r.crt}, *r.tour)
 			if err == nil {
 				g, presentation = tour.Game, app.CacheDraws(tour)
 			}
 		} else {
-			g, err = app.New(app.Config{Screen: r.screen, TickRate: r.rate})
+			g, err = app.New(app.Config{Screen: r.screen, TickRate: r.rate, MenuCRT: r.crt})
 			if err == nil {
 				presentation = app.CacheDraws(g)
 			}

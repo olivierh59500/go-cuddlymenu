@@ -14,8 +14,8 @@ import (
 )
 
 type controls struct {
-	back, reset, chooser, confirm, left, right, up, down, rate bool
-	chosen                                                     int
+	back, reset, chooser, confirm, left, right, up, down, rate, crt bool
+	chosen                                                          int
 }
 type button struct {
 	label, action string
@@ -44,6 +44,13 @@ func (g *Game) buttons() []button {
 	}
 	b := []button{makeButton("SCREENS", "chooser", x, 50), makeButton("RESET", "reset", x, 124)}
 	b = append(b, makeButton(fmt.Sprintf("%d HZ", g.TickRate()), "rate", x, 198))
+	if g.scene == nil && g.transition == nil {
+		label := "CRT OFF"
+		if g.menu.CRTEnabled() {
+			label = "CRT ON"
+		}
+		b = append(b, makeButton(label, "crt", x, 272))
+	}
 	if g.scene != nil || g.transition != nil || g.chooser {
 		b = append(b, makeButton("MENU", "back", x, h-70))
 	}
@@ -64,6 +71,8 @@ func (g *Game) readControls() controls {
 		for _, b := range g.buttons() {
 			if image.Pt(x, y).In(b.rect) {
 				switch b.action {
+				case "crt":
+					in.crt = true
 				case "rate":
 					in.rate = true
 				case "back":

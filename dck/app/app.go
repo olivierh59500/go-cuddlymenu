@@ -21,7 +21,8 @@ type Config struct {
 	Screen        string
 	Muted         bool
 	TouchControls bool
-	TickRate      int // Zero selects the default; 50 remains available for comparison.
+	TickRate      int  // Zero selects the default; 50 remains available for comparison.
+	MenuCRT       bool // Optional CRT material for the menu; zero preserves the original view.
 }
 type Game struct {
 	menu                      *menu.Game
@@ -51,6 +52,9 @@ func New(c Config) (*Game, error) {
 	g := &Game{config: c, track: "menu/resources/menu.ym", loopMusic: true}
 	g.menu = menu.NewGame()
 	g.menu.UseExternalAudio()
+	if c.MenuCRT {
+		g.menu.SetCRT(true)
+	}
 	if c.TouchControls {
 		g.menu.UseTouchControls()
 	}
@@ -178,6 +182,12 @@ func (g *Game) Update() error {
 		}
 		if err := g.SetTickRate(next); err != nil {
 			return err
+		}
+	}
+	if in.crt {
+		if !g.menu.SetCRT(!g.menu.CRTEnabled()) {
+			g.notice = "CRT effect unavailable"
+			g.noticeTicks = 3 * g.TickRate()
 		}
 	}
 	if in.chooser && g.transition == nil {
