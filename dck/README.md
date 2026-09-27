@@ -29,6 +29,18 @@ leaves a screen, RESET starts the reset demo and SCREENS opens the selector. The
 
 The separate application is **Cuddly Demo (DCK)**, package
 `com.olivierh.cuddlydemo`. Add `--build-only` to build without installing.
+For an unattended device route that includes the intro, doors, loaders and
+Reset, supply optional durations in seconds after installing the APK:
+
+```sh
+adb shell am start -S -W -n com.olivierh.cuddlydemo/.MainActivity \
+  --ei dck_tour_intro_seconds 10 --ei dck_tour_seconds 6 \
+  --ei dck_tour_menu_seconds 1
+```
+
+Each duration accepts 1–600 seconds. The route logs each
+`cuddly_tour screen=...` handoff for Pixel performance analysis. The ordinary
+touch-controlled application remains the default when these extras are absent.
 
 Assets live directly under `assets/cuddly/<screen>/`; common replacement tracks
 are in `assets/cuddly/ym/`. `data.json` contains native screen text and movement

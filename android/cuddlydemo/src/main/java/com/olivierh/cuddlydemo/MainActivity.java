@@ -3,6 +3,7 @@ package com.olivierh.cuddlydemo;
 import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -27,6 +28,13 @@ public final class MainActivity extends Activity {
                 getIntent().getBooleanExtra("metrics", false),
                 getIntent().getIntExtra("startFrame", 0),
                 getIntent().getIntExtra("hz", 0));
+        int tourSeconds = getIntent().getIntExtra("dck_tour_seconds", 0);
+        if (tourSeconds > 0 && !Mobile.configureTour(
+                getIntent().getIntExtra("dck_tour_intro_seconds", 10),
+                tourSeconds,
+                getIntent().getIntExtra("dck_tour_menu_seconds", 1))) {
+            Log.w("CuddlyDemo", "Ignoring invalid tour durations");
+        }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams attributes = getWindow().getAttributes();

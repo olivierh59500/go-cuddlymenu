@@ -1,9 +1,11 @@
 package mobilehost
 
 import (
+	"testing"
+	"time"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"go-cuddlymenu/dck/app"
-	"testing"
 )
 
 type counterGame struct{ updates int }
@@ -55,5 +57,27 @@ func TestMobileComparisonRateReachesLaunchRequest(t *testing.T) {
 	h.Configure("intro", false, 0)
 	if r = <-h.requests; r.rate != 0 {
 		t.Fatal("normal launch did not select the default rate")
+	}
+}
+
+func TestTourRequestKeepsAndroidRateAndMetrics(t *testing.T) {
+	host := New("intro")
+	host.ConfigureAtRate("dna", true, 12, 50)
+	if host.ConfigureTour(0, 6, 1) {
+		t.Fatal("accepted a zero-length introduction")
+	}
+	if !host.ConfigureTour(10, 6, 1) {
+		t.Fatal("rejected a valid complete tour")
+	}
+	select {
+	case request := <-host.requests:
+		if request.rate != 50 || !request.metrics || request.warmup != 12 || request.tour == nil ||
+			request.tour.IntroDuration != 10*time.Second ||
+			request.tour.ScreenDuration != 6*time.Second ||
+			request.tour.MenuDuration != time.Second {
+			t.Fatalf("tour lost the Android launch configuration: %+v", request)
+		}
+	default:
+		t.Fatal("tour request was not queued")
 	}
 }

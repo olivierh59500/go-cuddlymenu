@@ -25,3 +25,9 @@ func Configure(screen string, metrics bool, startFrame int) {
 func ConfigureAtRate(screen string, metrics bool, startFrame, rate int) {
 	host.ConfigureAtRate(screen, metrics, startFrame, rate)
 }
+
+// ConfigureTour enables an unattended complete route with editable dwell
+// times. Call it after ConfigureAtRate and before Android starts its view.
+func ConfigureTour(introSeconds, screenSeconds, menuSeconds int) bool {
+	return host.ConfigureTour(introSeconds, screenSeconds, menuSeconds)
+}
