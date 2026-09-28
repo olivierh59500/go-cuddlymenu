@@ -110,8 +110,8 @@ func (s *Scene) megaball() {
 		clearBlack(s.Canvas)
 		half.Clear()
 		scroll.Clear()
-		r.Step()
-		r.DrawAt(scroll, 0, scrollBounce.At(0))
+		s.advanceScroll(r)
+		s.drawScroll(r, scroll, 0, scrollBounce.At(0))
 		scrollBounce.Step()
 		s.draw(s.Canvas, scroll, 64, 70)
 		blink = (blink + 1) % 2

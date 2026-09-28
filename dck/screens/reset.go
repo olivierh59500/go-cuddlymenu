@@ -65,27 +65,27 @@ func (s *Scene) reset() {
 		// These are independent checks: a control can start the next part in
 		// this same tick, as in the original screen.
 		if director.Active("plain-a") {
-			r1.Step()
-			r1.DrawAt(plain, 0, 184)
+			s.advanceScroll(r1)
+			s.drawScroll(r1, plain, 0, 184)
 			s.draw(s.Canvas, plain, 64, 70)
-			if r1.NextRune() == '\\' {
+			if r1.CursorRune() == '\\' {
 				s.music("cuddlyreset.ym", true)
 				director.Trigger("first-end")
 			}
 		}
 		if director.Active("plain-b") {
-			r2.Step()
-			r2.DrawAt(plain, 0, 184)
+			s.advanceScroll(r2)
+			s.drawScroll(r2, plain, 0, 184)
 			s.draw(s.Canvas, plain, 64, 70)
-			if r2.NextRune() == ']' {
+			if r2.CursorRune() == ']' {
 				director.Trigger("second-end")
 			}
 		}
 		if director.Active("masked-a") {
-			r3.Step()
-			r3.DrawAt(scroll, 0, 184)
+			s.advanceScroll(r3)
+			s.drawScroll(r3, scroll, 0, 184)
 			maskScroll()
-			if r3.NextRune() == '\\' {
+			if r3.CursorRune() == '\\' {
 				director.Trigger("third-end")
 			}
 		}
@@ -105,11 +105,11 @@ func (s *Scene) reset() {
 				s.draw(s.Canvas, back, 64, 70)
 			}
 			director.StepWindow()
-			if r4.NextRune() == ']' {
+			if r4.CursorRune() == ']' {
 				director.Trigger("fourth-end")
 			}
-			r4.Step()
-			r4.DrawAt(scroll, 0, 184)
+			s.advanceScroll(r4)
+			s.drawScroll(r4, scroll, 0, 184)
 			maskScroll()
 		}
 		if director.Active("final") {

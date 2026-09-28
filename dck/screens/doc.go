@@ -72,9 +72,9 @@ func (s *Scene) doc() {
 		clearBlack(s.Canvas)
 		if !handoff.Main() {
 			intro.Clear()
-			r1.Step()
-			r1.DrawAt(intro, 0, 0)
-			handoff.Step(r1.NextRune() == '\\')
+			s.advanceScroll(r1)
+			s.drawScroll(r1, intro, 0, 0)
+			handoff.Step(r1.CursorRune() == '\\')
 			s.draw(s.Canvas, intro, 64, 62)
 			return
 		}
@@ -90,10 +90,10 @@ func (s *Scene) doc() {
 		outerRows.Clear()
 		inner.Clear()
 		innerRows.Clear()
-		r2.Step()
-		r3.Step()
-		r2.DrawAt(inner, 0, 0)
-		r3.DrawAt(outer, 0, 0)
+		s.advanceScroll(r2)
+		s.advanceScroll(r3)
+		s.drawScroll(r2, inner, 0, 0)
+		s.drawScroll(r3, outer, 0, 0)
 		vertical := innerWarp.Vertical()
 		outerWarp.DrawInto(outerRows, outer)
 		innerWarp.DrawInto(innerRows, inner)

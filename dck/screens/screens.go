@@ -9,6 +9,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/assets"
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/presets"
@@ -214,12 +215,27 @@ func (s *Scene) bitmap(atlas *ebiten.Image, recipe string, filter ebiten.Filter)
 	}
 	return grid
 }
-func (s *Scene) ring(dst, atlas *ebiten.Image, recipe, text string, speed float64) *scrolling.Ring {
-	r, err := scrolling.NewRing(scrolling.RingConfig{Text: text, Font: s.bitmap(atlas, recipe, s.filters[dst]), Viewport: float64(dst.Bounds().Dx()), Speed: speed, Controls: true})
+func (s *Scene) ring(dst, atlas *ebiten.Image, recipe, text string, speed float64) *scrolling.Scrolling {
+	r, err := scrolling.New(scrolling.Config{Recycled: &scrolling.RecycledConfig{Ring: scrolling.RingConfig{Text: text, Font: s.bitmap(atlas, recipe, s.filters[dst]), Viewport: float64(dst.Bounds().Dx()), Speed: speed, Controls: true}}})
 	if err != nil {
 		s.err = err
+		return nil
 	}
+	s.closeEffects = append(s.closeEffects, r.Close)
 	return r
+}
+
+// Scene helpers retain authored call order through the shared scrolling facade.
+func (s *Scene) advanceScroll(scroll *scrolling.Scrolling) {
+	if err := scroll.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond}); err != nil {
+		s.err = err
+	}
+}
+
+func (s *Scene) drawScroll(scroll *scrolling.Scrolling, dst *ebiten.Image, x, y float64) {
+	if err := scroll.DrawOffset(dst, x, y); err != nil {
+		s.err = err
+	}
 }
 
 func (s *Scene) draw(dst, src *ebiten.Image, x, y float64) {

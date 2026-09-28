@@ -20,7 +20,7 @@ func (s *Scene) starwars() {
 		s.err = err
 		return
 	}
-	dualScroll, err := scrolling.NewDualProfiledRing(dualConfig)
+	dualScroll, err := scrolling.New(scrolling.Config{DualProfiled: &dualConfig})
 	if err != nil {
 		s.err = err
 		return

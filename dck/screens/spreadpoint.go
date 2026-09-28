@@ -135,8 +135,8 @@ func (s *Scene) spreadpoint() {
 		logoLayer.Draw(main)
 		if iteration >= 1952 {
 			dnaText.Clear()
-			r.Step()
-			r.DrawAt(dnaText, 0, 0)
+			s.advanceScroll(r)
+			s.drawScroll(r, dnaText, 0, 0)
 			dna.Step(dnaText)
 			dna.DrawAt(main, 52, 150, 0, dnaGradient)
 		}

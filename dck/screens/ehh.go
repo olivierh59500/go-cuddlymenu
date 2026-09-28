@@ -80,8 +80,8 @@ func (s *Scene) ehh() {
 		}
 		barGroup.Draw(s.Canvas)
 		if rollerClock.State().ShowSecond {
-			r2.Step()
-			r2.DrawAt(b, 0, 0)
+			s.advanceScroll(r2)
+			s.drawScroll(r2, b, 0, 0)
 		}
 		middleRaster.Draw(b)
 		s.draw(s.Canvas, b, 64, 86)
@@ -96,16 +96,16 @@ func (s *Scene) ehh() {
 		s.draw(roll, inner, innerRoll.At(0), 0)
 		innerRoll.Step()
 		s.draw(s.Canvas, roll, 96, 360-y)
-		r1.Step()
-		r1.DrawAt(a, 0, 0)
+		s.advanceScroll(r1)
+		s.drawScroll(r1, a, 0, 0)
 		s.draw(s.Canvas, a, 96, 360-y)
 		if rollerClock.State().ShowThird {
-			r3.Step()
-			r3.DrawAt(c, 0, 0)
+			s.advanceScroll(r3)
+			s.drawScroll(r3, c, 0, 0)
 			s.draw(s.Canvas, c, 160, 348-y)
 			s.transform(s.Canvas, c, 160, 436-y, 1, -1, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		}
-		if err := rollerClock.Step(r1.NextRune()); err != nil {
+		if err := rollerClock.Step(r1.CursorRune()); err != nil {
 			s.err = err
 			return
 		}

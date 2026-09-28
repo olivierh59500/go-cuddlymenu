@@ -54,8 +54,8 @@ func (s *Scene) colorshock() {
 		hx, hy := float64(background.Bounds().Dx()/2), float64(background.Bounds().Dy()/2)
 		backgroundLayer.DrawAt(back, background, point.X-hx, point.Y-hy)
 		s.draw(s.Canvas, back, 0, 0)
-		r.Step()
-		r.DrawAt(scroll, 0, 0)
+		s.advanceScroll(r)
+		s.drawScroll(r, scroll, 0, 0)
 		s.draw(scroll, accent, 0, 0)
 		s.draw(s.Canvas, scroll, 90, 110+positions[int(tableClock.At(0))])
 		if err := backgroundPath.Step(); err != nil {
@@ -109,8 +109,8 @@ func (s *Scene) megaScroller() {
 		merge.Clear()
 		backdrop.Draw(stage)
 		backdrop.Step()
-		r.Step()
-		r.DrawAt(merge, 0, 0)
+		s.advanceScroll(r)
+		s.drawScroll(r, merge, 0, 0)
 		verticalMotion.Step()
 		maskMaterial.Draw(merge)
 		s.draw(stage, merge, 0, verticalMotion.At(0))
@@ -123,17 +123,19 @@ func (s *Scene) bigSprite() {
 	stage, a, b, starCanvas := s.surface(640, 400), s.surface(568, 41), s.surface(568, 41), s.surface(320, 200)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	s.filters[starCanvas] = ebiten.FilterNearest
-	dualScroll, err := scrolling.NewRingLanes(scrolling.RingLanesConfig{
+	laneConfig := scrolling.RingLanesConfig{
 		Rings: []scrolling.RingConfig{
 			{Text: s.data.Strings["text"], Font: s.bitmap(fontIn, "cuddly-bigsprite", s.filters[a]), Viewport: float64(a.Bounds().Dx()), Speed: 8, Controls: true},
 			{Text: s.data.Strings["text"], Font: s.bitmap(fontOut, "cuddly-bigsprite", s.filters[b]), Viewport: float64(b.Bounds().Dx()), Speed: 8, Controls: true},
 		},
 		Y: []float64{0, 0},
-	})
+	}
+	dualScroll, err := scrolling.New(scrolling.Config{RingLanes: &laneConfig})
 	if err != nil {
 		s.err = err
 		return
 	}
+	s.closeEffects = append(s.closeEffects, dualScroll.Close)
 	rasterFill, err := composite.NewRasterOverlay(composite.RasterOverlayConfig{
 		Image: raster, ScaleX: 85, ScaleY: 1, Alpha: 1,
 		VelocityY: -2, WrapY: &composite.RasterWrap{Boundary: -177, Restart: 0, Inclusive: true},
@@ -190,9 +192,9 @@ func (s *Scene) bigSprite() {
 		a.Clear()
 		b.Clear()
 		starCanvas.Clear()
-		dualScroll.Step()
-		dualScroll.DrawLaneAt(0, a, 0, 0)
-		dualScroll.DrawLaneAt(1, b, 0, 0)
+		s.advanceScroll(dualScroll)
+		dualScroll.RingLanesController().DrawLaneAt(0, a, 0, 0)
+		dualScroll.RingLanesController().DrawLaneAt(1, b, 0, 0)
 		rasterFill.Draw(a)
 		rasterFill.Step()
 		if err := field.Update(kit.Frame{}); err != nil {
@@ -315,8 +317,8 @@ func (s *Scene) knucklebuster() {
 		s.draw(stage, logo, 0, 0)
 		s.draw(stage, body, 0, 110)
 		scroll.Clear()
-		r.Step()
-		r.DrawAt(scroll, 0, 0)
+		s.advanceScroll(r)
+		s.drawScroll(r, scroll, 0, 0)
 		s.draw(stage, scroll, 0, 364)
 		hits.Draw(stage)
 		clearBlack(s.Canvas)

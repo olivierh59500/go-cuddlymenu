@@ -68,10 +68,10 @@ func (s *Scene) dna() {
 		clearBlack(main)
 		if inIntro {
 			introText.Clear()
-			intro.Step()
-			intro.DrawAt(introText, 0, 0)
+			s.advanceScroll(intro)
+			s.drawScroll(intro, introText, 0, 0)
 			s.draw(main, introText, 52, 180)
-			if intro.Cursor() == 0 {
+			if intro.RecycledController().Cursor() == 0 {
 				inIntro = false
 				s.music("bankok-knights-1.ym", true)
 			}
@@ -81,10 +81,10 @@ func (s *Scene) dna() {
 		}
 		front.Clear()
 		back.Clear()
-		topFront.Step()
-		topBack.Step()
-		topFront.DrawAt(front, 0, 0)
-		topBack.DrawAt(back, 0, 0)
+		s.advanceScroll(topFront)
+		s.advanceScroll(topBack)
+		s.drawScroll(topFront, front, 0, 0)
+		s.drawScroll(topBack, back, 0, 0)
 		if err := ribbon.Update(kit.Frame{}); err != nil {
 			s.err = err
 			return
@@ -92,8 +92,8 @@ func (s *Scene) dna() {
 		ribbon.DrawAt(main, 52, 0)
 		sineText.Clear()
 		sineWave.Clear()
-		sine.Step()
-		sine.DrawAt(sineText, 0, 0)
+		s.advanceScroll(sine)
+		s.drawScroll(sine, sineText, 0, 0)
 		wave.DrawAt(sineWave, sineText, 0, 50)
 		wave.Advance()
 		s.draw(main, sineWave, 52, 72)
@@ -114,13 +114,13 @@ func (s *Scene) dna() {
 		}
 		centerRows.Draw(main)
 		dnaBack.Clear()
-		rBack.Step()
-		rBack.DrawAt(dnaBack, 0, 0)
+		s.advanceScroll(rBack)
+		s.drawScroll(rBack, dnaBack, 0, 0)
 		fBack.Step(dnaBack)
 		fBack.DrawAt(main, 52, 175, -iteration/2, gradientBack)
 		dnaFront.Clear()
-		rFront.Step()
-		rFront.DrawAt(dnaFront, 0, 0)
+		s.advanceScroll(rFront)
+		s.drawScroll(rFront, dnaFront, 0, 0)
 		fFront.Step(dnaFront)
 		fFront.DrawAt(main, 52, 175, iteration/2, gradientFront)
 		s.transform(s.Canvas, main, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)

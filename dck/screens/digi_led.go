@@ -54,8 +54,8 @@ func (s *Scene) digi() {
 		}
 		logoRows.Draw(stage)
 		s.transform(stage, union, 320, logoRows.Bounce()+14, 1, 1, 0, float64(union.Bounds().Dx()/2), float64(union.Bounds().Dy()/2), 1, ebiten.BlendSourceOver)
-		r.Step()
-		r.DrawAt(stage, 0, scrollBounce.At(0))
+		s.advanceScroll(r)
+		s.drawScroll(r, stage, 0, scrollBounce.At(0))
 		scrollBounce.Step()
 		s.err = group.Update(kit.Frame{Tick: s.frame, Time: float64(s.frame) / TicksPerSecond})
 		group.Draw(stage)
@@ -151,8 +151,8 @@ func (s *Scene) led() {
 		s.draw(s.Canvas, stage, 64, 70)
 		led.Clear()
 		s.draw(led, bubbles, 0, 0)
-		r.Step()
-		r.DrawAt(led, 0, 2)
+		s.advanceScroll(r)
+		s.drawScroll(r, led, 0, 2)
 		s.draw(s.Canvas, led, 64, ledBounce.At(0))
 		ledBounce.Step()
 	}

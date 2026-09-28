@@ -7,6 +7,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	kit "github.com/olivierh59500/democonstructionkit"
 	"github.com/olivierh59500/democonstructionkit/assets"
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
@@ -33,7 +34,7 @@ type Screen struct {
 	store            *assets.Store
 	background, text *ebiten.Image
 	font             scrolling.BitmapGrid
-	scroll           *scrolling.Ring
+	scroll           *scrolling.Scrolling
 }
 
 func newScreenClock(countdown *timeline.Countdown, rate int) (*timeline.CueClock, error) {
@@ -98,7 +99,7 @@ func NewAtRate(name string, rate int) (*Screen, error) {
 	f := l.font
 	f.Image = grey
 	f.Columns = grey.Bounds().Dx() / 16
-	l.scroll, err = scrolling.NewRing(scrolling.RingConfig{Text: spec.Text, Font: f, Viewport: 640, Speed: 6})
+	l.scroll, err = scrolling.New(scrolling.Config{Recycled: &scrolling.RecycledConfig{Ring: scrolling.RingConfig{Text: spec.Text, Font: f, Viewport: 640, Speed: 6}}})
 	if err != nil {
 		l.Close()
 		return nil, err
@@ -150,10 +151,17 @@ func (l *Screen) render() {
 		l.font.Print(l.Canvas, fmt.Sprintf("%3d", max(0, blipps)), 562, 284, 1, 1)
 	}
 	l.text.Clear()
-	l.scroll.Step()
-	l.scroll.DrawAt(l.text, 0, 0)
+	_ = l.scroll.Update(kit.Frame{Tick: uint64(l.clock.Tick())})
+	l.scroll.Draw(l.text)
 	op.GeoM.Reset()
 	op.GeoM.Translate(64, 450)
 	l.Canvas.DrawImage(l.text, &op)
 }
-func (l *Screen) Close() error { l.Canvas.Deallocate(); l.text.Deallocate(); return l.store.Close() }
+func (l *Screen) Close() error {
+	if l.scroll != nil {
+		l.scroll.Close()
+	}
+	l.Canvas.Deallocate()
+	l.text.Deallocate()
+	return l.store.Close()
+}
