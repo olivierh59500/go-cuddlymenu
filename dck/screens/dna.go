@@ -18,15 +18,17 @@ func (s *Scene) dna() {
 	topFront := s.ring(front, s.asset("font_top_front.png"), "cuddly-dna", s.data.Strings["text_top"], 6)
 	topBack := s.ring(back, s.asset("font_top_back.png"), "cuddly-dna", s.data.Strings["text_top"], 6)
 	sine := s.ring(sineText, s.asset("font_sin.png"), "cuddly-dna-sine", s.data.Strings["text_sin"], 3)
+	// Preserve the authored texture upload order for fractional logo sampling.
+	dnaFontFront, dnaFontBack := s.asset("font_dna_front.png"), s.asset("font_dna_back.png")
 	ribbon, err := composite.NewTwistingRibbon(presets.CuddlyDNARibbon(front, back))
 	if err != nil {
 		s.err = err
 		return
 	}
 	gradientFront, gradientBack, logo := s.asset("gradient_dna_front.png"), s.asset("gradient_dna_back.png"), s.asset("tcb.png")
-	feedback := func(name string, gradient *ebiten.Image, direction int) *scrolling.Scrolling {
+	feedback := func(font *ebiten.Image, gradient *ebiten.Image, direction int) *scrolling.Scrolling {
 		config, err := presets.CuddlyDNAFeedbackScroll(
-			s.bitmap(s.asset(name), "cuddly-dna", ebiten.FilterLinear), gradient,
+			s.bitmap(font, "cuddly-dna", ebiten.FilterLinear), gradient,
 			s.data.Strings["text_dna"], s.data.Numbers["dna_pos"], direction)
 		if err != nil {
 			s.err = err
@@ -40,8 +42,8 @@ func (s *Scene) dna() {
 		s.closeEffects = append(s.closeEffects, scroll.Close)
 		return scroll
 	}
-	fFront := feedback("font_dna_front.png", gradientFront, 1)
-	fBack := feedback("font_dna_back.png", gradientBack, -1)
+	fFront := feedback(dnaFontFront, gradientFront, 1)
+	fBack := feedback(dnaFontBack, gradientBack, -1)
 	outerConfig, err := presets.CuddlyDNAOuterLogoRows(logo)
 	if err != nil {
 		s.err = err
