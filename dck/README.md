@@ -235,3 +235,15 @@ go vet ./...
 go run ./dck/cmd/checkcuddly
 go run ./dck/cmd/checktiming -hz 60 -out captures/timing.json
 ```
+
+The 2026-09-28 collection sweep compared 289 complete frames across the fifteen
+screens, idle menu, thirteen door loaders and a Megaball input sequence against
+native revision `f3a921e`. It found six sampling regressions that shorter local
+checks had missed: the first Spreadpoint logo frame, DOC's raster fill,
+Fullscreen's logo band, Starwars' sprite train, DNA's ribbon/logo rows and Reset's
+raster pairs. Their DCK presets now retain the authored linear filtering. All
+289 sampled frames match the earlier native production exactly; this measures
+the extraction, not original Atari hardware. Sixty additional complete frames
+of those six screens also match using the published DCK dependency without a
+local module replacement. Spreadpoint's per-frame filter setter is unnecessary;
+the complete logo material is supplied by its preset.

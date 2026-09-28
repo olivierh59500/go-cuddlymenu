@@ -133,10 +133,6 @@ func (s *Scene) spreadpoint() {
 			return
 		}
 		logoLayer.Draw(main)
-		if err := logoLayer.SetPassFilter(0, ebiten.FilterLinear); err != nil {
-			s.err = err
-			return
-		}
 		if iteration >= 1952 {
 			dnaText.Clear()
 			r.Step()
