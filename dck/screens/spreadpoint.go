@@ -14,26 +14,13 @@ import (
 	"github.com/olivierh59500/democonstructionkit/timeline"
 )
 
-func (s *Scene) feedback(width, height, speedX, speedY, direction int, insertY float64, profile []float64) *scrolling.FeedbackDNA {
-	rows := make([]int, len(profile))
-	for i, v := range profile {
-		rows[i] = int(v)
-	}
-	f, err := scrolling.NewFeedbackDNA(scrolling.FeedbackDNAConfig{Width: width, Height: height, HorizontalSpeed: speedX, VerticalSpeed: speedY, ColumnWidth: 2, Direction: direction, InsertY: insertY, Profile: rows, Filter: ebiten.FilterLinear})
-	if err != nil {
-		s.err = err
-		return nil
-	}
-	s.closeEffects = append(s.closeEffects, f.Close)
-	return f
-}
 func (s *Scene) spreadpoint() {
 	var cards []*ebiten.Image
 	for i := 1; i <= 4; i++ {
 		cards = append(cards, s.asset(fmt.Sprintf("intro%d.png", i)))
 	}
 	in, out, raster, font, gradient, dnaFont, dnaGradient, ball := s.asset("tcb-in.png"), s.asset("tcb-out.png"), s.asset("tcb-raster.png"), s.asset("font.png"), s.asset("gradient.png"), s.asset("font_dna.png"), s.asset("gradient_dna.png"), s.asset("ball.png")
-	main, spread, dnaText := s.surface(416, 276), s.surface(320, 200), s.surface(320, 25)
+	main, spread := s.surface(416, 276), s.surface(320, 200)
 	s.filters[s.Canvas] = ebiten.FilterNearest
 	// Stretch single-pixel ramps without sampling transparent side padding.
 	s.filters[spread] = ebiten.FilterNearest
@@ -51,8 +38,19 @@ func (s *Scene) spreadpoint() {
 		return
 	}
 	s.closeEffects = append(s.closeEffects, bands.Close)
-	r := s.ring(dnaText, dnaFont, "cuddly-dna", s.data.Strings["text_dna"], 4)
-	dna := s.feedback(320, 64, 4, 2, 1, 4, s.data.Numbers["dna_pos"])
+	feedbackConfig, err := presets.CuddlySpreadpointFeedbackScroll(
+		s.bitmap(dnaFont, "cuddly-dna", ebiten.FilterLinear), dnaGradient,
+		s.data.Strings["text_dna"], s.data.Numbers["dna_pos"])
+	if err != nil {
+		s.err = err
+		return
+	}
+	dna, err := scrolling.New(feedbackConfig)
+	if err != nil {
+		s.err = err
+		return
+	}
+	s.closeEffects = append(s.closeEffects, dna.Close)
 	ballConfig, err := presets.CuddlySpreadpointBallFormation(ball, 20)
 	if err != nil {
 		s.err = err
@@ -134,11 +132,11 @@ func (s *Scene) spreadpoint() {
 		}
 		logoLayer.Draw(main)
 		if iteration >= 1952 {
-			dnaText.Clear()
-			s.advanceScroll(r)
-			s.drawScroll(r, dnaText, 0, 0)
-			dna.Step(dnaText)
-			dna.DrawAt(main, 52, 150, 0, dnaGradient)
+			if err := dna.Update(kit.Frame{Tick: uint64(iteration)}); err != nil {
+				s.err = err
+				return
+			}
+			dna.Draw(main)
 		}
 		s.transform(s.Canvas, main, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		phase.Step()

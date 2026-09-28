@@ -6,26 +6,42 @@ import (
 	"github.com/olivierh59500/democonstructionkit/composite"
 	"github.com/olivierh59500/democonstructionkit/geometry"
 	"github.com/olivierh59500/democonstructionkit/presets"
+	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
 )
 
 func (s *Scene) dna() {
 	main := s.surface(416, 276)
 	s.filters[s.Canvas] = ebiten.FilterNearest
-	introText, front, back, sineText, sineWave, dnaFront, dnaBack := s.surface(320, 25), s.surface(320, 25), s.surface(320, 25), s.surface(320, 16), s.surface(320, 100), s.surface(320, 25), s.surface(320, 25)
+	introText, front, back, sineText, sineWave := s.surface(320, 25), s.surface(320, 25), s.surface(320, 25), s.surface(320, 16), s.surface(320, 100)
 	intro := s.ring(introText, s.asset("font_intro.png"), "cuddly-dna", s.data.Strings["text_intro"], 6)
 	topFront := s.ring(front, s.asset("font_top_front.png"), "cuddly-dna", s.data.Strings["text_top"], 6)
 	topBack := s.ring(back, s.asset("font_top_back.png"), "cuddly-dna", s.data.Strings["text_top"], 6)
 	sine := s.ring(sineText, s.asset("font_sin.png"), "cuddly-dna-sine", s.data.Strings["text_sin"], 3)
-	rFront := s.ring(dnaFront, s.asset("font_dna_front.png"), "cuddly-dna", s.data.Strings["text_dna"], 4)
-	rBack := s.ring(dnaBack, s.asset("font_dna_back.png"), "cuddly-dna", s.data.Strings["text_dna"], 4)
 	ribbon, err := composite.NewTwistingRibbon(presets.CuddlyDNARibbon(front, back))
 	if err != nil {
 		s.err = err
 		return
 	}
-	fFront, fBack := s.feedback(320, 64, 4, 2, 1, 25, s.data.Numbers["dna_pos"]), s.feedback(320, 64, 4, 2, -1, 37, s.data.Numbers["dna_pos"])
 	gradientFront, gradientBack, logo := s.asset("gradient_dna_front.png"), s.asset("gradient_dna_back.png"), s.asset("tcb.png")
+	feedback := func(name string, gradient *ebiten.Image, direction int) *scrolling.Scrolling {
+		config, err := presets.CuddlyDNAFeedbackScroll(
+			s.bitmap(s.asset(name), "cuddly-dna", ebiten.FilterLinear), gradient,
+			s.data.Strings["text_dna"], s.data.Numbers["dna_pos"], direction)
+		if err != nil {
+			s.err = err
+			return nil
+		}
+		scroll, err := scrolling.New(config)
+		if err != nil {
+			s.err = err
+			return nil
+		}
+		s.closeEffects = append(s.closeEffects, scroll.Close)
+		return scroll
+	}
+	fFront := feedback("font_dna_front.png", gradientFront, 1)
+	fBack := feedback("font_dna_back.png", gradientBack, -1)
 	outerConfig, err := presets.CuddlyDNAOuterLogoRows(logo)
 	if err != nil {
 		s.err = err
@@ -113,16 +129,16 @@ func (s *Scene) dna() {
 			return
 		}
 		centerRows.Draw(main)
-		dnaBack.Clear()
-		s.advanceScroll(rBack)
-		s.drawScroll(rBack, dnaBack, 0, 0)
-		fBack.Step(dnaBack)
-		fBack.DrawAt(main, 52, 175, -iteration/2, gradientBack)
-		dnaFront.Clear()
-		s.advanceScroll(rFront)
-		s.drawScroll(rFront, dnaFront, 0, 0)
-		fFront.Step(dnaFront)
-		fFront.DrawAt(main, 52, 175, iteration/2, gradientFront)
+		if err := fBack.Update(kit.Frame{Tick: uint64(iteration)}); err != nil {
+			s.err = err
+			return
+		}
+		fBack.Draw(main)
+		if err := fFront.Update(kit.Frame{Tick: uint64(iteration)}); err != nil {
+			s.err = err
+			return
+		}
+		fFront.Draw(main)
 		s.transform(s.Canvas, main, 0, 0, 2, 2, 0, 0, 0, 1, ebiten.BlendSourceOver)
 		iteration++
 	}
