@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	kit "github.com/olivierh59500/democonstructionkit"
@@ -97,6 +98,9 @@ type Scene struct {
 	input        func(Input)
 	audioCue     *AudioCue
 	closeEffects []func() error
+	musicClock   func() time.Duration
+	elapsed      float64
+	tickRate     int
 }
 
 func New(id string) (*Scene, error) {
@@ -108,7 +112,7 @@ func New(id string) (*Scene, error) {
 		return nil, fmt.Errorf("%s is not available yet", d.Title)
 	}
 	s := &Scene{Descriptor: d, store: assets.New(media.Files), filters: map[*ebiten.Image]ebiten.Filter{}, random: 42}
-	// Keep the seeded starfield and drummer trigger sequences stable.
+	// Preserve the initial seed value used by deterministic particle fields.
 	s.rnd()
 	bytes, err := media.Files.ReadFile("data.json")
 	if err != nil {
@@ -170,6 +174,7 @@ func (s *Scene) Update() error {
 		return s.err
 	}
 	s.frame++
+	s.elapsed += 1 / float64(s.AnimationRate())
 	s.render()
 	return s.err
 }
@@ -192,6 +197,37 @@ func (s *Scene) Input(in Input) {
 		s.input(in)
 	}
 }
+
+// SetMusicClock supplies audible soundtrack progress. A nil clock uses elapsed
+// scene time, keeping muted playback and deterministic captures animated.
+func (s *Scene) SetMusicClock(clock func() time.Duration) { s.musicClock = clock }
+
+func (s *Scene) MusicPosition() time.Duration {
+	if s.musicClock != nil {
+		return max(s.musicClock(), 0)
+	}
+	return s.Elapsed()
+}
+
+func (s *Scene) Elapsed() time.Duration {
+	return time.Duration(math.Round(s.elapsed * float64(time.Second)))
+}
+
+func (s *Scene) AnimationRate() int {
+	if s.tickRate == 0 {
+		return TicksPerSecond
+	}
+	return s.tickRate
+}
+
+func (s *Scene) SetAnimationRate(rate int) error {
+	valid, err := timing.Normalize(rate)
+	if err == nil {
+		s.tickRate = valid
+	}
+	return err
+}
+
 func (s *Scene) music(file string, loop bool) { s.audioCue = &AudioCue{File: file, Loop: loop} }
 func (s *Scene) TakeAudioCue() *AudioCue      { cue := s.audioCue; s.audioCue = nil; return cue }
 func (s *Scene) asset(name string) *ebiten.Image {

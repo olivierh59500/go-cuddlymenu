@@ -12,6 +12,7 @@ import (
 	"github.com/olivierh59500/democonstructionkit/presets"
 	"github.com/olivierh59500/democonstructionkit/scrolling"
 	"github.com/olivierh59500/democonstructionkit/sprites"
+	media "go-cuddlymenu/assets/cuddly"
 )
 
 func (s *Scene) colorshock() {
@@ -303,12 +304,27 @@ func (s *Scene) knucklebuster() {
 	logo, body, head, bass, left, right, font := s.asset("logo.png"), s.asset("batteur.png"), s.asset("tete2.png"), s.asset("bdrum.png"), s.asset("ldrum.png"), s.asset("rdrum.png"), s.asset("fonts.png")
 	stage, scroll := s.surface(640, 400), s.surface(640, 34)
 	r := s.ring(scroll, font, "cuddly-knucklebuster", s.data.Strings["text"], 8)
-	hits, err := sprites.NewLatchedOverlay(presets.CuddlyKnucklebusterHits(head, bass, left, right, s.rnd))
+	bank, err := media.Files.ReadFile("tex/drummer-triggers.bin")
+	if err != nil {
+		s.err = err
+		return
+	}
+	signals, err := motion.NewSampledSignals(motion.SampledSignalsConfig{
+		Channels: 4, Rate: 50, Masks: bank, Loop: true,
+	})
+	if err != nil {
+		s.err = err
+		return
+	}
+	position := s.MusicPosition()
+	hits, err := sprites.NewLatchedOverlay(presets.CuddlyKnucklebusterDrummer(head, bass, left, right,
+		func(channel, _ int) bool { return signals.At(position, channel) }))
 	if err != nil {
 		s.err = err
 		return
 	}
 	s.render = func() {
+		position = s.MusicPosition()
 		if err := hits.Update(kit.Frame{}); err != nil {
 			s.err = err
 			return

@@ -115,9 +115,15 @@ screen's seeded two-sample random-angle distribution. Other demos may select
 equal-area random samples or a deterministic Fibonacci surface without
 changing the disc renderer. Six complete DNA captures at frames 0, 60, 240,
 600, 1,200 and 2,400 remain pixel-identical after this extraction.
-Knucklebuster's head and drums now use `sprites.LatchedOverlay` for its seeded
-five-tick hit windows. A separate DCK preset can replace the random source
-with a live music/event signal without changing the sprite positions.
+Knucklebuster uses DCK 1.0.14's `motion.SampledSignals` and
+`presets.CuddlyKnucklebusterDrummer` through `sprites.LatchedOverlay`. The
+original Atari music routine supplies four independent left-arm, right-arm,
+bass-drum and head channels. Drum gestures last six source ticks, while the
+head has a twenty-tick hold. A compact 54,750-byte bank covers the full
+1,095-second track at 50 Hz. Sampling follows audible playback, preserving
+the rhythm across pauses, seeks and display-rate changes. An independent
+68000 execution fixture verifies every one of the 219,000 animation flags.
+Other compositions can supply their own sampled or live signals and artwork.
 Starwars' eight small sprites now use `sprites.SampledSpriteTrain` with its
 authored XY tables, staggered samples and independent X/Y waves. The shared
 controller keeps one copy of each path table and retains the strict wrap tick.

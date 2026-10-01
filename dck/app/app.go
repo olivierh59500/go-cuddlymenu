@@ -4,6 +4,7 @@ package app
 import (
 	"image/color"
 	"strings"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -112,6 +113,15 @@ func (g *Game) open(id string) error {
 		g.scene.Close()
 	}
 	g.scene = s
+	if err := s.SetAnimationRate(g.TickRate()); err != nil {
+		return err
+	}
+	s.SetMusicClock(func() time.Duration {
+		if g.player != nil {
+			return g.player.Position()
+		}
+		return s.Elapsed()
+	})
 	g.consumeAudioCue()
 	return nil
 }
@@ -361,6 +371,11 @@ func (g *Game) SetTickRate(rate int) error {
 		}
 	}
 	g.config.TickRate = rate
+	if g.scene != nil {
+		if err := g.scene.SetAnimationRate(rate); err != nil {
+			return err
+		}
+	}
 	ebiten.SetTPS(rate)
 	return nil
 }

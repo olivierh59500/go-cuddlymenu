@@ -27,6 +27,13 @@ provide movement/thrust, ENTER, MENU, RESET, SCREENS, the rate selector and a
 CRT OFF / CRT ON button in the menu.
 The original standalone Android menu uses `./scripts/run-android.sh`.
 
+Knucklebuster's drummer follows the original Atari music routine rather than
+random triggers. Its two arms, bass drum and head have independent animation
+channels, with six-tick drum gestures and a twenty-tick head hold. DCK samples
+the complete 50 Hz animation bank at audible music progress, preserving the
+rhythm at either display rate. The 54,750-frame bank spans the full 1,095-second
+soundtrack and is verified against 219,000 original 68000 animation flags.
+
 See [the native DCK entry points](dck/README.md) for screen selection, asset layout
 and validation commands. Go downloads the published DCK module pinned in
 `go.mod` and its audio dependencies automatically. Every DCK entry point uses
