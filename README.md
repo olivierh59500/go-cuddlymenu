@@ -3,6 +3,35 @@
 Native Go/Ebitengine implementation with YM playback and embedded artwork,
 fonts and audio. Desktop and Android share the same rendering and input code.
 
+<!-- Project showcase -->
+## Screenshots
+
+[![Rainbow raster patterns and scrolling text](docs/media/screenshot-1.png)](docs/media/screenshot-1.png)
+
+Rainbow raster patterns and scrolling text.
+
+[![Bouncing red balls over a perspective checkerboard](docs/media/screenshot-2.png)](docs/media/screenshot-2.png)
+
+Bouncing red balls over a perspective checkerboard.
+
+[![Music-synchronized drummer and scrolling text](docs/media/screenshot-3.png)](docs/media/screenshot-3.png)
+
+Music-synchronized drummer and scrolling text.
+
+## Video
+
+[![Animated preview of The Cuddly Demos](docs/media/preview.gif)](https://github.com/olivierh59500/go-cuddlymenu/raw/refs/heads/main/docs/media/preview.mp4)
+
+**[Watch or download the 24-second MP4 preview with sound](https://github.com/olivierh59500/go-cuddlymenu/raw/refs/heads/main/docs/media/preview.mp4)**
+
+This short showcase combines selected passages from the Go production.
+
+The animated image is silent; the MP4 includes the soundtrack.
+
+<!-- End project showcase -->
+
+## Production notes
+
 ```sh
 go run ./dck/cmd/cuddlydemo   # Complete production, starting with the intro.
 go run ./dck/cmd/cuddlymenu   # Start directly in the menu.
